@@ -5,17 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class WorkOrder extends Model
 {
     use SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::creating(function (WorkOrder $workOrder) {
+            if (empty($workOrder->created_by) && auth()->check()) {
+                $workOrder->created_by = auth()->id();
+            }
+        });
+    }
 
     protected $fillable = [
         'reference_number', 'client_id', 'lead_id', 'title', 'description',
         'category', 'status', 'priority', 'budget', 'actual_cost',
         'budget_alert_threshold', 'assigned_department_id', 'start_date',
         'deadline', 'completed_at', 'created_by', 'details',
+        'claimed_by', 'claimed_at',
     ];
 
     protected function casts(): array
@@ -24,10 +36,41 @@ class WorkOrder extends Model
             'start_date' => 'date',
             'deadline' => 'date',
             'completed_at' => 'datetime',
+            'claimed_at' => 'datetime',
             'details' => 'array',
             'budget' => 'decimal:2',
             'actual_cost' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Claim this work order for the given user (with pessimistic locking).
+     */
+    public function claim(User $user): bool
+    {
+        return DB::transaction(function () use ($user) {
+            $locked = static::lockForUpdate()->find($this->id);
+            if ($locked->claimed_by) {
+                return false;
+            }
+            $locked->update([
+                'claimed_by' => $user->id,
+                'claimed_at' => now(),
+                'status' => 'in_progress',
+            ]);
+            return true;
+        });
+    }
+
+    /**
+     * Release this work order so it returns to the queue.
+     */
+    public function release(): void
+    {
+        $this->update([
+            'claimed_by' => null,
+            'claimed_at' => null,
+        ]);
     }
 
     public function client(): BelongsTo
@@ -48,6 +91,11 @@ class WorkOrder extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function claimedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'claimed_by');
     }
 
     public function notes(): HasMany
@@ -78,5 +126,10 @@ class WorkOrder extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(Document::class, 'documentable');
     }
 }

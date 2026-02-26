@@ -14,7 +14,7 @@ class StaffAvailabilityResource extends Resource
 {
     protected static ?string $model = StaffAvailability::class;
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationGroup = 'Staff Management';
+    protected static ?string $navigationGroup = 'HR';
     protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form

@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -28,14 +29,26 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors(['primary' => Color::Amber])
-            ->brandName('Household Media — Admin')
+            ->brandName('Household Media')
+            ->navigationGroups([
+                NavigationGroup::make('Dashboard')->icon('heroicon-o-home'),
+                NavigationGroup::make('Operations')->icon('heroicon-o-clipboard-document-list'),
+                NavigationGroup::make('CRM')->icon('heroicon-o-user-group')->label('CRM'),
+                NavigationGroup::make('Warehouse')->icon('heroicon-o-building-office'),
+                NavigationGroup::make('Finance')->icon('heroicon-o-banknotes'),
+                NavigationGroup::make('HR')->icon('heroicon-o-users'),
+                NavigationGroup::make('Reports')->icon('heroicon-o-chart-bar'),
+                NavigationGroup::make('Division')->icon('heroicon-o-squares-2x2')->collapsed(),
+            ])
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
+            ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->pages([Pages\Dashboard::class])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-            ])
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -14,5 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            // Redirect AFK users back to login instead of showing 419 error
+            return redirect()->guest(
+                $request->is('client*') ? '/client/login' :
+                ($request->is('staff*') ? '/staff/login' : '/admin/login')
+            );
+        });
     })->create();

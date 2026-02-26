@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StaffAvailability extends Model
 {
+    protected $table = 'staff_availability';
     protected $fillable = [
         'user_id', 'unavailable_from', 'unavailable_to',
         'reason', 'notes', 'approved_by',

@@ -15,38 +15,61 @@ class RateCardResource extends Resource
     protected static ?string $model = RateCard::class;
     protected static ?string $navigationIcon = 'heroicon-o-tag';
     protected static ?string $navigationGroup = 'Finance';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\TextInput::make('service_type')->required()->maxLength(255),
-            Forms\Components\Select::make('category')->options(['media' => 'Media', 'civil_works' => 'Civil Works', 'energy' => 'Energy'])->required(),
-            Forms\Components\TextInput::make('unit')->required()->maxLength(50),
-            Forms\Components\TextInput::make('rate')->numeric()->required()->prefix('USD'),
-            Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
-            Forms\Components\DatePicker::make('effective_from')->required(),
-            Forms\Components\DatePicker::make('effective_to'),
-            Forms\Components\Toggle::make('is_active')->default(true),
-        ])->columns(2);
+            Forms\Components\Section::make()->schema([
+                Forms\Components\TextInput::make('service_type')->required()->maxLength(255)
+                    ->helperText('e.g., Billboard Installation, Graphic Design, Solar Panel Mounting'),
+                Forms\Components\Select::make('category')
+                    ->options([
+                        'media' => 'Media', 'civil_works' => 'Civil Works',
+                        'energy' => 'Energy', 'warehouse' => 'Warehouse',
+                        'design' => 'Design', 'labour' => 'Labour',
+                    ])->required(),
+                Forms\Components\TextInput::make('unit')->required()->maxLength(50)
+                    ->helperText('e.g., sqm, hour, unit, metre'),
+                Forms\Components\TextInput::make('rate')->numeric()->required()->prefix('$'),
+                Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
+                Forms\Components\Toggle::make('is_active')->default(true),
+                Forms\Components\DatePicker::make('effective_from'),
+                Forms\Components\DatePicker::make('effective_to'),
+            ])->columns(2),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
             Tables\Columns\TextColumn::make('service_type')->searchable()->sortable(),
-            Tables\Columns\TextColumn::make('category')->badge(),
+            Tables\Columns\TextColumn::make('category')->badge()
+                ->color(fn ($state) => match ($state) {
+                    'media' => 'primary', 'civil_works' => 'warning', 'energy' => 'success',
+                    'warehouse' => 'info', 'design' => 'purple', 'labour' => 'orange',
+                    default => 'gray',
+                }),
+            Tables\Columns\TextColumn::make('rate')->money('usd')->sortable(),
             Tables\Columns\TextColumn::make('unit'),
-            Tables\Columns\TextColumn::make('rate')->money('USD')->sortable(),
-            Tables\Columns\TextColumn::make('effective_from')->date()->sortable(),
-            Tables\Columns\TextColumn::make('effective_to')->date(),
             Tables\Columns\IconColumn::make('is_active')->boolean(),
+            Tables\Columns\TextColumn::make('effective_from')->date(),
+            Tables\Columns\TextColumn::make('effective_to')->date(),
         ])
         ->filters([
-            Tables\Filters\SelectFilter::make('category')->options(['media' => 'Media', 'civil_works' => 'Civil Works', 'energy' => 'Energy']),
+            Tables\Filters\SelectFilter::make('category')->options([
+                'media' => 'Media', 'civil_works' => 'Civil Works', 'energy' => 'Energy',
+                'warehouse' => 'Warehouse', 'design' => 'Design', 'labour' => 'Labour',
+            ]),
             Tables\Filters\TernaryFilter::make('is_active'),
         ])
-        ->actions([Tables\Actions\EditAction::make()])
+        ->actions([
+            Tables\Actions\EditAction::make(),
+            Tables\Actions\ReplicateAction::make()
+                ->label('Duplicate')
+                ->excludeAttributes(['created_at', 'updated_at'])
+                ->successNotificationTitle('Rate card duplicated'),
+        ])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 
