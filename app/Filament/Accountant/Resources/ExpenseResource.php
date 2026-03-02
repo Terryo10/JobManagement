@@ -20,27 +20,28 @@ class ExpenseResource extends Resource
 
     public static function canCreate(): bool
     {
-        return false;
+        return true;
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return true;
     }
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Section::make('Approval')->schema([
-                Forms\Components\Select::make('approval_status')
-                    ->options(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'])
-                    ->required(),
-                Forms\Components\Hidden::make('approved_by')->default(fn () => auth()->id()),
-                Forms\Components\Textarea::make('rejection_reason')->rows(3)
-                    ->visible(fn (Forms\Get $get) => $get('approval_status') === 'rejected')
-                    ->columnSpanFull(),
-            ])->columns(2),
-        ]);
+            Forms\Components\Select::make('work_order_id')->relationship('workOrder', 'reference_number')->searchable()->preload()->required(),
+            Forms\Components\Select::make('category')->options(['Labour' => 'Labour', 'Transport' => 'Transport', 'Materials' => 'Materials', 'Equipment' => 'Equipment'])->required(),
+            Forms\Components\TextInput::make('amount')->numeric()->required()->prefix('USD'),
+            Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
+            Forms\Components\DatePicker::make('expense_date')->required(),
+            Forms\Components\Select::make('submitted_by')->relationship('submittedBy', 'name')->searchable()->preload()->required(),
+            Forms\Components\Select::make('approved_by')->relationship('approvedBy', 'name')->searchable()->preload(),
+            Forms\Components\Select::make('approval_status')->options(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'])->default('pending')->required(),
+            Forms\Components\Textarea::make('description')->rows(3)->columnSpanFull(),
+            Forms\Components\Textarea::make('rejection_reason')->rows(2)->columnSpanFull(),
+        ])->columns(2);
     }
 
     public static function table(Table $table): Table
@@ -99,8 +100,9 @@ class ExpenseResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListExpenses::route('/'),
-            'edit'  => Pages\EditExpense::route('/{record}/edit'),
+            'index'  => Pages\ListExpenses::route('/'),
+            'create' => Pages\CreateExpense::route('/create'),
+            'edit'   => Pages\EditExpense::route('/{record}/edit'),
         ];
     }
 }

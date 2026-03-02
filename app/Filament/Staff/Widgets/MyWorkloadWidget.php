@@ -33,19 +33,23 @@ class MyWorkloadWidget extends StatsOverviewWidget
             Stat::make('Available Tasks', $available)
                 ->description('Ready to claim')
                 ->icon('heroicon-o-queue-list')
-                ->color('primary'),
+                ->color('primary')
+                ->url(route('filament.staff.resources.tasks.index', ['tableFilters[queue][value]' => 'available'])),
             Stat::make('My Active Tasks', $claimed)
                 ->description('Currently working')
                 ->icon('heroicon-o-arrow-path')
-                ->color('warning'),
+                ->color('warning')
+                ->url(route('filament.staff.resources.tasks.index', ['tableFilters[queue][value]' => 'mine'])),
             Stat::make('Completed', $completed)
                 ->description('This month')
                 ->icon('heroicon-o-check-badge')
-                ->color('success'),
+                ->color('success')
+                ->url(route('filament.staff.resources.tasks.index', ['tableFilters[status][value]' => 'completed'])),
             Stat::make('Overdue', $overdue)
                 ->description('Needs attention')
                 ->icon('heroicon-o-exclamation-triangle')
-                ->color($overdue > 0 ? 'danger' : 'success'),
+                ->color($overdue > 0 ? 'danger' : 'success')
+                ->url(route('filament.staff.resources.tasks.index', ['tableFilters[status][value]' => 'pending'])),
         ];
     }
 }

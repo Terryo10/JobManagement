@@ -40,19 +40,23 @@ class JobStatsOverview extends StatsOverviewWidget
                 ->description($inProgress . ' in progress')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('primary')
-                ->chart([7, 3, 4, 5, 6, $totalActive]),
+                ->chart([7, 3, 4, 5, 6, $totalActive])
+                ->url(route('filament.admin.resources.work-orders.index')),
             Stat::make('Urgent Attention', $urgentItems)
                 ->description($overdueTasks . ' overdue tasks')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color('danger'),
+                ->color('danger')
+                ->url(route('filament.admin.resources.work-orders.index', ['tableFilters[priority][value]' => 'urgent'])),
             Stat::make('Pending Invoices', '$' . number_format($pendingInvoiceTotal, 2))
                 ->description('Awaiting payment')
                 ->descriptionIcon('heroicon-m-banknotes')
-                ->color('warning'),
+                ->color('warning')
+                ->url(route('filament.admin.resources.invoices.index', ['tableFilters[status][value]' => 'sent'])),
             Stat::make('Completed This Month', $completedThisMonth)
                 ->description('Jobs finished')
                 ->descriptionIcon('heroicon-m-check-badge')
-                ->color('success'),
+                ->color('success')
+                ->url(route('filament.admin.resources.work-orders.index', ['tableFilters[status][value]' => 'completed'])),
         ];
     }
 }

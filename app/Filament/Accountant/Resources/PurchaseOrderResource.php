@@ -5,6 +5,7 @@ namespace App\Filament\Accountant\Resources;
 use App\Filament\Accountant\Resources\PurchaseOrderResource\Pages;
 use App\Models\PurchaseOrder;
 use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
@@ -21,12 +22,41 @@ class PurchaseOrderResource extends Resource
 
     public static function canCreate(): bool
     {
-        return false;
+        return true;
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return true;
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([
+            Forms\Components\Section::make()->schema([
+                Forms\Components\TextInput::make('reference_number')->required()->maxLength(50)
+                    ->unique(ignoreRecord: true)
+                    ->default(fn () => 'PO-' . now()->format('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT)),
+                Forms\Components\Select::make('supplier_id')
+                    ->relationship('supplier', 'name')->searchable()->preload()->required(),
+                Forms\Components\Select::make('status')
+                    ->options([
+                        'draft' => 'Draft', 'submitted' => 'Submitted', 'approved' => 'Approved',
+                        'ordered' => 'Ordered', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled',
+                    ])
+                    ->default('draft')->required(),
+                Forms\Components\Select::make('ordered_by')
+                    ->relationship('orderedBy', 'name')->searchable()->preload()
+                    ->default(fn () => auth()->id()),
+                Forms\Components\Select::make('approved_by')
+                    ->relationship('approvedBy', 'name')->searchable()->preload(),
+                Forms\Components\TextInput::make('total_amount')->numeric()->prefix('$')->default(0)
+                    ->disabled()->dehydrated(),
+                Forms\Components\DatePicker::make('expected_delivery'),
+                Forms\Components\DateTimePicker::make('delivered_at'),
+                Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
+            ])->columns(2),
+        ]);
     }
 
     public static function table(Table $table): Table
@@ -81,14 +111,18 @@ class PurchaseOrderResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Accountant\Resources\PurchaseOrderResource\RelationManagers\ItemsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListPurchaseOrders::route('/'),
+            'create' => Pages\CreatePurchaseOrder::route('/create'),
             'view'  => Pages\ViewPurchaseOrder::route('/{record}'),
+            'edit'  => Pages\EditPurchaseOrder::route('/{record}/edit'),
         ];
     }
 }

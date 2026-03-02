@@ -22,26 +22,55 @@ class InvoiceResource extends Resource
 
     public static function canCreate(): bool
     {
-        return false;
+        return true;
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return true;
     }
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Section::make('Payment Details')->schema([
-                Forms\Components\Select::make('status')
-                    ->options(['draft' => 'Draft', 'sent' => 'Sent', 'paid' => 'Paid', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled'])
-                    ->required(),
-                Forms\Components\Select::make('payment_method')
-                    ->options(['bank_transfer' => 'Bank Transfer', 'cash' => 'Cash', 'cheque' => 'Cheque', 'card' => 'Card', 'eft' => 'EFT']),
-                Forms\Components\TextInput::make('payment_reference')->maxLength(255),
-                Forms\Components\DatePicker::make('paid_at')->label('Payment Date'),
-            ])->columns(2),
+            Forms\Components\Tabs::make('Invoice')->tabs([
+                Forms\Components\Tabs\Tab::make('Details')->icon('heroicon-o-information-circle')->schema([
+                    Forms\Components\TextInput::make('invoice_number')->required()->maxLength(50)
+                        ->unique(ignoreRecord: true)
+                        ->default(fn () => 'INV-' . now()->format('Y') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT)),
+                    Forms\Components\Select::make('client_id')
+                        ->relationship('client', 'company_name')->searchable()->preload()->required(),
+                    Forms\Components\Select::make('work_order_id')
+                        ->relationship('workOrder', 'reference_number')->searchable()->preload()
+                        ->helperText('Link to a specific job card'),
+                    Forms\Components\Select::make('status')
+                        ->options(['draft' => 'Draft', 'sent' => 'Sent', 'paid' => 'Paid', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled'])
+                        ->default('draft')->required(),
+                    Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
+                    Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
+                ])->columns(2),
+                Forms\Components\Tabs\Tab::make('Financials')->icon('heroicon-o-calculator')->schema([
+                    Forms\Components\TextInput::make('subtotal')->numeric()->prefix('$')->default(0)->disabled()->dehydrated(),
+                    Forms\Components\TextInput::make('tax_rate')->numeric()->suffix('%')->default(0)
+                        ->reactive()
+                        ->afterStateUpdated(function (\Filament\Forms\Set $set, \Filament\Forms\Get $get) {
+                            $subtotal = (float) ($get('subtotal') ?: 0);
+                            $taxRate = (float) ($get('tax_rate') ?: 0);
+                            $taxAmount = round($subtotal * ($taxRate / 100), 2);
+                            $set('tax_amount', $taxAmount);
+                            $set('total', $subtotal + $taxAmount);
+                        }),
+                    Forms\Components\TextInput::make('tax_amount')->numeric()->prefix('$')->default(0)->disabled()->dehydrated(),
+                    Forms\Components\TextInput::make('total')->numeric()->prefix('$')->default(0)->disabled()->dehydrated(),
+                ])->columns(2),
+                Forms\Components\Tabs\Tab::make('Dates & Payment')->icon('heroicon-o-calendar')->schema([
+                    Forms\Components\DatePicker::make('issued_at')->label('Issue Date'),
+                    Forms\Components\DatePicker::make('due_at')->label('Due Date'),
+                    Forms\Components\DateTimePicker::make('paid_at')->label('Paid At'),
+                    Forms\Components\TextInput::make('payment_method')->maxLength(100),
+                    Forms\Components\TextInput::make('payment_reference')->maxLength(255),
+                ])->columns(2),
+            ])->columnSpanFull(),
         ]);
     }
 
@@ -109,13 +138,16 @@ class InvoiceResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Accountant\Resources\InvoiceResource\RelationManagers\InvoiceItemsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListInvoices::route('/'),
+            'create' => Pages\CreateInvoice::route('/create'),
             'edit'  => Pages\EditInvoice::route('/{record}/edit'),
             'view'  => Pages\ViewInvoice::route('/{record}'),
         ];

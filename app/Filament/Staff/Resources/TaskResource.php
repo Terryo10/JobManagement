@@ -34,21 +34,27 @@ class TaskResource extends Resource
 
     public static function canCreate(): bool
     {
-        return false;
+        return true;
     }
 
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\Section::make('Task Details')->schema([
-                Forms\Components\TextInput::make('title')->disabled(),
-                Forms\Components\TextInput::make('workOrder.reference_number')->label('Job Card')->disabled(),
+                Forms\Components\Select::make('work_order_id')->relationship('workOrder', 'reference_number')->searchable()->preload()->required(),
+                Forms\Components\TextInput::make('title')->required()->maxLength(255)->columnSpanFull(),
                 Forms\Components\Select::make('status')
                     ->options(['pending' => 'Pending', 'in_progress' => 'In Progress', 'completed' => 'Completed', 'blocked' => 'Blocked'])
+                    ->default('pending')
                     ->required(),
-                Forms\Components\TextInput::make('completion_percentage')->numeric()->suffix('%')->minValue(0)->maxValue(100),
+                Forms\Components\Select::make('priority')
+                    ->options(['low' => 'Low', 'normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'])
+                    ->default('normal')
+                    ->required(),
+                Forms\Components\TextInput::make('completion_percentage')->numeric()->suffix('%')->minValue(0)->maxValue(100)->default(0),
                 Forms\Components\TextInput::make('actual_hours')->numeric()->suffix('hrs')->label('Hours Worked'),
-                Forms\Components\Textarea::make('description')->rows(4)->disabled()->columnSpanFull(),
+                Forms\Components\DatePicker::make('deadline'),
+                Forms\Components\Textarea::make('description')->rows(4)->columnSpanFull(),
             ])->columns(2),
         ]);
     }
@@ -129,6 +135,7 @@ class TaskResource extends Resource
     {
         return [
             'index' => Pages\ListTasks::route('/'),
+            'create' => Pages\CreateTask::route('/create'),
             'edit' => Pages\EditTask::route('/{record}/edit'),
         ];
     }

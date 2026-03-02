@@ -8,8 +8,10 @@ use Filament\Widgets\ChartWidget;
 class JobDistributionChart extends ChartWidget
 {
     protected static ?int $sort = 3;
+
     protected static ?string $heading = 'Job Distribution by Division';
-    protected int | string | array $columnSpan = 1;
+
+    protected int|string|array $columnSpan = 1;
 
     protected function getData(): array
     {

@@ -19,14 +19,17 @@ class RevenueStatsWidget extends StatsOverviewWidget
         return [
             Stat::make('Total Invoiced', '$' . number_format($totalInvoiced, 2))
                 ->icon('heroicon-o-banknotes')
-                ->color('primary'),
+                ->color('primary')
+                ->url(route('filament.accountant.resources.invoices.index')),
             Stat::make('Total Received', '$' . number_format($totalPaid, 2))
                 ->icon('heroicon-o-check-badge')
-                ->color('success'),
+                ->color('success')
+                ->url(route('filament.accountant.resources.invoices.index', ['tableFilters[status][value]' => 'paid'])),
             Stat::make('Outstanding Balance', '$' . number_format($outstanding, 2))
                 ->description($overdueCount > 0 ? "{$overdueCount} overdue invoices" : 'No overdue invoices')
                 ->icon('heroicon-o-exclamation-circle')
-                ->color($overdueCount > 0 ? 'danger' : 'warning'),
+                ->color($overdueCount > 0 ? 'danger' : 'warning')
+                ->url(route('filament.accountant.resources.invoices.index', ['tableFilters[status][value]' => 'overdue'])),
         ];
     }
 }
