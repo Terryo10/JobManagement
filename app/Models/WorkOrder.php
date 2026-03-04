@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,6 +19,16 @@ class WorkOrder extends Model
         static::creating(function (WorkOrder $workOrder) {
             if (empty($workOrder->created_by) && auth()->check()) {
                 $workOrder->created_by = auth()->id();
+            }
+
+            if (empty($workOrder->reference_number)) {
+                $year = date('Y');
+                $last = static::withTrashed()
+                    ->where('reference_number', 'like', "WO-{$year}-%")
+                    ->orderByDesc('reference_number')
+                    ->value('reference_number');
+                $next = $last ? ((int) substr($last, strrpos($last, '-') + 1)) + 1 : 1;
+                $workOrder->reference_number = 'WO-' . $year . '-' . str_pad($next, 4, '0', STR_PAD_LEFT);
             }
         });
     }
@@ -126,6 +137,12 @@ class WorkOrder extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function collaborators(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'work_order_collaborators')
+            ->withPivot('role', 'added_at');
     }
 
     public function documents(): MorphMany

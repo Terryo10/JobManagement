@@ -20,6 +20,16 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class StaffPanelProvider extends PanelProvider
 {
+    public function register(): void
+    {
+        parent::register();
+
+        $this->app->bind(
+            \Filament\Http\Responses\Auth\Contracts\LogoutResponse::class,
+            \App\Http\Responses\StaffLogoutResponse::class,
+        );
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -30,6 +40,7 @@ class StaffPanelProvider extends PanelProvider
             ->brandName('Household Media — Staff')
             ->databaseNotifications()
             ->sidebarCollapsibleOnDesktop()
+            ->readOnlyRelationManagersOnResourceViewPagesByDefault(false)
             ->discoverResources(in: app_path('Filament/Staff/Resources'), for: 'App\\Filament\\Staff\\Resources')
             ->discoverPages(in: app_path('Filament/Staff/Pages'), for: 'App\\Filament\\Staff\\Pages')
             ->pages([Pages\Dashboard::class])

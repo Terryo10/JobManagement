@@ -16,13 +16,14 @@ class WorkOrderResource extends Resource
 {
     protected static ?string $model = WorkOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $navigationLabel = 'My Work Orders';
+    protected static ?string $navigationLabel = 'My Jobs';
+    protected static ?string $navigationGroup = 'Work Orders';
     protected static ?int $navigationSort = 2;
 
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->whereIn('status', ['pending', 'in_progress', 'on_hold']);
+            ->where('claimed_by', auth()->id());
     }
 
     public static function canCreate(): bool
@@ -35,7 +36,11 @@ class WorkOrderResource extends Resource
         return $form->schema([
             \Filament\Forms\Components\Tabs::make('Job Card')->tabs([
                 \Filament\Forms\Components\Tabs\Tab::make('Details')->icon('heroicon-o-information-circle')->schema([
-                    \Filament\Forms\Components\TextInput::make('reference_number')->required()->maxLength(50)->unique(ignoreRecord: true),
+                    \Filament\Forms\Components\TextInput::make('reference_number')
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->placeholder('Auto-generated on save')
+                        ->hiddenOn('create'),
                     \Filament\Forms\Components\TextInput::make('title')->required()->maxLength(255)->columnSpanFull(),
                     \Filament\Forms\Components\Select::make('client_id')->relationship('client', 'company_name')->searchable()->preload()->required()
                         ->reactive()
@@ -50,7 +55,9 @@ class WorkOrderResource extends Resource
                         ->default('normal')->required(),
                     \Filament\Forms\Components\Select::make('assigned_department_id')
                         ->relationship('assignedDepartment', 'name')->searchable()->preload()->label('Department'),
-                    \Filament\Forms\Components\Textarea::make('description')->rows(4)->columnSpanFull(),
+                    \Filament\Forms\Components\RichEditor::make('description')
+                        ->toolbarButtons(['bold', 'italic', 'underline', 'bulletList', 'orderedList', 'link', 'undo', 'redo'])
+                        ->columnSpanFull(),
                 ])->columns(2),
                 \Filament\Forms\Components\Tabs\Tab::make('Timeline')->icon('heroicon-o-clock')->schema([
                     \Filament\Forms\Components\DatePicker::make('start_date'),
@@ -102,14 +109,17 @@ class WorkOrderResource extends Resource
                 Infolists\Components\TextEntry::make('claimedBy.name')->label('Claimed By')->placeholder('—'),
                 Infolists\Components\TextEntry::make('start_date')->date(),
                 Infolists\Components\TextEntry::make('deadline')->date(),
-                Infolists\Components\TextEntry::make('description')->columnSpanFull(),
+                Infolists\Components\TextEntry::make('description')->html()->columnSpanFull(),
             ])->columns(3),
         ]);
     }
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\TasksRelationManager::class,
+            \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\CollaboratorsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

@@ -5,6 +5,7 @@ namespace App\Models;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -57,5 +58,11 @@ class User extends Authenticatable implements FilamentUser
     public function availability(): HasMany
     {
         return $this->hasMany(StaffAvailability::class);
+    }
+
+    public function workOrders(): BelongsToMany
+    {
+        return $this->belongsToMany(WorkOrder::class, 'work_order_collaborators')
+            ->withPivot('role', 'added_at');
     }
 }

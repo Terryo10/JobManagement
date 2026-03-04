@@ -43,6 +43,20 @@ class TaskResource extends Resource
             Forms\Components\Section::make('Task Details')->schema([
                 Forms\Components\Select::make('work_order_id')->relationship('workOrder', 'reference_number')->searchable()->preload()->required(),
                 Forms\Components\TextInput::make('title')->required()->maxLength(255)->columnSpanFull(),
+                Forms\Components\Select::make('assigned_to')
+                    ->label('Assign To')
+                    ->relationship(
+                        'assignedTo',
+                        'name',
+                        fn ($query) => $query->whereHas(
+                            'roles',
+                            fn ($q) => $q->whereNotIn('name', ['client'])
+                        )->orderBy('name')
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->nullable()
+                    ->placeholder('— Unassigned —'),
                 Forms\Components\Select::make('status')
                     ->options(['pending' => 'Pending', 'in_progress' => 'In Progress', 'completed' => 'Completed', 'blocked' => 'Blocked'])
                     ->default('pending')
@@ -54,7 +68,9 @@ class TaskResource extends Resource
                 Forms\Components\TextInput::make('completion_percentage')->numeric()->suffix('%')->minValue(0)->maxValue(100)->default(0),
                 Forms\Components\TextInput::make('actual_hours')->numeric()->suffix('hrs')->label('Hours Worked'),
                 Forms\Components\DatePicker::make('deadline'),
-                Forms\Components\Textarea::make('description')->rows(4)->columnSpanFull(),
+                Forms\Components\RichEditor::make('description')
+                    ->toolbarButtons(['bold', 'italic', 'underline', 'bulletList', 'orderedList', 'link', 'undo', 'redo'])
+                    ->columnSpanFull(),
             ])->columns(2),
         ]);
     }
@@ -64,8 +80,8 @@ class TaskResource extends Resource
         return $table->columns([
             Tables\Columns\TextColumn::make('title')->searchable()->limit(45),
             Tables\Columns\TextColumn::make('workOrder.reference_number')->label('Job Card'),
-            Tables\Columns\TextColumn::make('claimedBy.name')->label('Claimed By')
-                ->placeholder('Available')
+            Tables\Columns\TextColumn::make('assignedTo.name')->label('Assigned To')
+                ->placeholder('— Unassigned —')
                 ->badge()
                 ->color(fn ($state) => $state ? 'success' : 'gray'),
             Tables\Columns\TextColumn::make('status')->badge()->color(fn ($state) => match ($state) {
