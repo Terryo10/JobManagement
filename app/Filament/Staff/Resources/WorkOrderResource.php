@@ -16,7 +16,7 @@ class WorkOrderResource extends Resource
 {
     protected static ?string $model = WorkOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $navigationLabel = 'My Jobs';
+    protected static ?string $navigationLabel = 'My Work Orders';
     protected static ?int $navigationSort = 2;
 
     public static function getEloquentQuery(): Builder
