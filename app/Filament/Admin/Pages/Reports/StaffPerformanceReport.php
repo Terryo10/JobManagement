@@ -27,6 +27,7 @@ class StaffPerformanceReport extends Page implements HasTable
             ->query(
                 Task::query()
                     ->select('assigned_to')
+                    ->selectRaw('MAX(id) as id')
                     ->selectRaw('COUNT(*) as total_tasks')
                     ->selectRaw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tasks")
                     ->selectRaw('COALESCE(SUM(actual_hours), 0) as total_actual_hours')
