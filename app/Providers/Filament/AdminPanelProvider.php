@@ -11,6 +11,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -40,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Reports')->icon('heroicon-o-chart-bar'),
                 NavigationGroup::make('Division')->icon('heroicon-o-squares-2x2')->collapsed(),
             ])
+            ->plugin(FilamentFullCalendarPlugin::make())
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])

@@ -118,6 +118,9 @@ class WorkOrderResource extends Resource
     {
         return [
             \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\TasksRelationManager::class,
+            \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\TimeLogsRelationManager::class,
+            \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\MaterialsRelationManager::class,
+            \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\SafetyChecklistRelationManager::class,
             \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\CollaboratorsRelationManager::class,
         ];
     }
