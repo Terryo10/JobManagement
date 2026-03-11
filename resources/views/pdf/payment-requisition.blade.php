@@ -134,10 +134,10 @@
             @foreach($purchaseOrder->items as $i => $item)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>{{ $item->description ?? $item->material?->name ?? '—' }}</td>
+                <td>{{ $item->material?->name ?? '—' }}</td>
                 <td class="text-right">{{ (int)$item->quantity }}</td>
                 <td class="text-right">{{ number_format($item->unit_price, 2) }}</td>
-                <td class="text-right">{{ number_format($item->total, 2) }}</td>
+                <td class="text-right">{{ number_format($item->total_price, 2) }}</td>
             </tr>
             @endforeach
         </tbody>

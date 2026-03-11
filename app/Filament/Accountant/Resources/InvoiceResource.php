@@ -149,6 +149,7 @@ class InvoiceResource extends Resource
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('gray')
                 ->action(function ($record) {
+                    $record->load('items', 'client', 'workOrder', 'createdBy');
                     $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $record]);
                     return response()->streamDownload(
                         fn () => print($pdf->output()),
