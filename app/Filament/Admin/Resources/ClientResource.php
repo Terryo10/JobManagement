@@ -3,9 +3,12 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\ClientResource\Pages;
+use App\Filament\Admin\Resources\ClientResource\RelationManagers;
 use App\Models\Client;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -48,13 +51,33 @@ class ClientResource extends Resource
             Tables\Filters\TernaryFilter::make('is_active'),
             Tables\Filters\TrashedFilter::make(),
         ])
-        ->actions([Tables\Actions\EditAction::make()])
+        ->actions([Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make(), Tables\Actions\ForceDeleteBulkAction::make(), Tables\Actions\RestoreBulkAction::make()])]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make('Client Details')->schema([
+                Infolists\Components\TextEntry::make('company_name'),
+                Infolists\Components\TextEntry::make('contact_person'),
+                Infolists\Components\TextEntry::make('email'),
+                Infolists\Components\TextEntry::make('phone'),
+                Infolists\Components\TextEntry::make('city'),
+                Infolists\Components\IconEntry::make('is_active')->boolean(),
+                Infolists\Components\TextEntry::make('address')->columnSpanFull(),
+                Infolists\Components\TextEntry::make('notes')->columnSpanFull(),
+            ])->columns(3),
+        ]);
     }
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            RelationManagers\LeadsRelationManager::class,
+            RelationManagers\WorkOrdersRelationManager::class,
+            RelationManagers\InvoicesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -62,6 +85,7 @@ class ClientResource extends Resource
         return [
             'index'  => Pages\ListClients::route('/'),
             'create' => Pages\CreateClient::route('/create'),
+            'view'   => Pages\ViewClient::route('/{record}'),
             'edit'   => Pages\EditClient::route('/{record}/edit'),
         ];
     }

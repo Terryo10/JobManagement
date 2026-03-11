@@ -18,6 +18,7 @@ class TaskTimeLogResource extends Resource
     protected static ?string $navigationLabel = 'My Time Logs';
     protected static ?string $navigationGroup = 'My Work';
     protected static ?int $navigationSort = 3;
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function getEloquentQuery(): Builder
     {

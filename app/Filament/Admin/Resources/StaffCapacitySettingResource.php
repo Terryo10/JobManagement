@@ -14,7 +14,7 @@ class StaffCapacitySettingResource extends Resource
 {
     protected static ?string $model = StaffCapacitySetting::class;
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
-    protected static ?string $navigationGroup = 'Staff Management';
+    protected static ?string $navigationGroup = 'HR';
     protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form

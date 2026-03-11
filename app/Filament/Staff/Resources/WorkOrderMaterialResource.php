@@ -17,6 +17,7 @@ class WorkOrderMaterialResource extends Resource
     protected static ?string $navigationLabel = 'Material Usage';
     protected static ?string $navigationGroup = 'My Work';
     protected static ?int $navigationSort = 5;
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function form(Form $form): Form
     {

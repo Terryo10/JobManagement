@@ -15,7 +15,7 @@ class StaffAvailabilityResource extends Resource
 {
     protected static ?string $model = StaffAvailability::class;
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationLabel = 'My Availability';
+    protected static ?string $navigationLabel = 'Leave & Availability';
     protected static ?string $navigationGroup = 'My Work';
     protected static ?int $navigationSort = 4;
 
@@ -28,22 +28,79 @@ class StaffAvailabilityResource extends Resource
     {
         return $form->schema([
             Forms\Components\Hidden::make('user_id')->default(fn () => auth()->id()),
-            Forms\Components\DatePicker::make('unavailable_from')->required(),
-            Forms\Components\DatePicker::make('unavailable_to')->required(),
-            Forms\Components\Select::make('reason')->options(['leave' => 'Leave', 'field_deployment' => 'Field Deployment', 'training' => 'Training', 'other' => 'Other']),
-            Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
-        ])->columns(2);
+            Forms\Components\Section::make('When are you unavailable?')
+                ->description('Management will be notified and your calendar will be blocked for this period.')
+                ->schema([
+                    Forms\Components\DatePicker::make('unavailable_from')
+                        ->label('From')
+                        ->required()
+                        ->native(false),
+                    Forms\Components\DatePicker::make('unavailable_to')
+                        ->label('Until (inclusive)')
+                        ->required()
+                        ->native(false)
+                        ->afterOrEqual('unavailable_from'),
+                    Forms\Components\Select::make('reason')
+                        ->label('Reason')
+                        ->options([
+                            'leave'            => 'Annual Leave',
+                            'sick'             => 'Sick Leave',
+                            'field_deployment' => 'Field Deployment',
+                            'training'         => 'Training',
+                            'other'            => 'Other',
+                        ])
+                        ->required(),
+                    Forms\Components\Textarea::make('notes')
+                        ->label('Additional Notes')
+                        ->rows(2)
+                        ->placeholder('Any extra context for your manager...')
+                        ->columnSpanFull(),
+                ])->columns(2),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table->columns([
-            Tables\Columns\TextColumn::make('unavailable_from')->date()->sortable(),
-            Tables\Columns\TextColumn::make('unavailable_to')->date()->sortable(),
-            Tables\Columns\TextColumn::make('reason')->badge(),
-            Tables\Columns\TextColumn::make('approvedBy.name')->label('Approved By'),
-        ])
-        ->actions([Tables\Actions\EditAction::make()]);
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('unavailable_from')
+                    ->label('From')
+                    ->date('d M Y')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('unavailable_to')
+                    ->label('Until')
+                    ->date('d M Y')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('reason')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'leave'            => 'Annual Leave',
+                        'sick'             => 'Sick Leave',
+                        'field_deployment' => 'Field Deployment',
+                        'training'         => 'Training',
+                        default            => ucfirst($state ?? 'Other'),
+                    })
+                    ->color(fn ($state) => match ($state) {
+                        'leave'  => 'info',
+                        'sick'   => 'warning',
+                        'field_deployment' => 'success',
+                        'training' => 'primary',
+                        default  => 'gray',
+                    }),
+                Tables\Columns\TextColumn::make('approvedBy.name')
+                    ->label('Approved By')
+                    ->placeholder('Pending approval')
+                    ->badge()
+                    ->color(fn ($state) => $state ? 'success' : 'warning'),
+            ])
+            ->defaultSort('unavailable_from', 'desc')
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->emptyStateHeading('No leave requests yet')
+            ->emptyStateDescription('Submit a request so management knows when you\'re unavailable. Your calendar will show blocked-out periods.')
+            ->emptyStateIcon('heroicon-o-calendar-days');
     }
 
     public static function getRelations(): array

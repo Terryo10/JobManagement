@@ -16,6 +16,7 @@ class Invoice extends Model
         'subtotal', 'tax_rate', 'tax_amount', 'total', 'currency',
         'issued_at', 'due_at', 'paid_at', 'payment_method',
         'payment_reference', 'notes', 'created_by',
+        'client_signature', 'client_signature_date', 'client_ip',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class Invoice extends Model
             'issued_at' => 'date',
             'due_at' => 'date',
             'paid_at' => 'datetime',
+            'client_signature_date' => 'datetime',
             'subtotal' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'tax_amount' => 'decimal:2',

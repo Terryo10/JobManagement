@@ -1,0 +1,16 @@
+<?php
+
+namespace App\Filament\Marketing\Resources\ClientResource\Pages;
+
+use App\Filament\Marketing\Resources\ClientResource;
+use Filament\Resources\Pages\ListRecords;
+
+class ListClients extends ListRecords
+{
+    protected static string $resource = ClientResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [\Filament\Actions\CreateAction::make()];
+    }
+}

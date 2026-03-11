@@ -14,7 +14,7 @@ class NotificationPreferenceResource extends Resource
 {
     protected static ?string $model = NotificationPreference::class;
     protected static ?string $navigationIcon = 'heroicon-o-bell';
-    protected static ?string $navigationGroup = 'Notifications';
+    protected static ?string $navigationGroup = 'HR';
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form

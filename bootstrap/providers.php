@@ -5,4 +5,7 @@ return [
     App\Providers\Filament\AdminPanelProvider::class,
     App\Providers\Filament\StaffPanelProvider::class,
     App\Providers\Filament\ClientPanelProvider::class,
+    App\Providers\Filament\AccountantPanelProvider::class,
+    App\Providers\Filament\MarketingPanelProvider::class,
+
 ];

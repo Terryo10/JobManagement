@@ -5,6 +5,7 @@ namespace App\Models;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -13,7 +14,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'name', 'email', 'password', 'phone_number', 'department_id', 'is_active',
@@ -36,10 +37,12 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
-            'admin'  => $this->hasRole(['super_admin', 'manager']),
-            'staff'  => $this->hasRole(['super_admin', 'manager', 'dept_head', 'staff']),
+            'admin' => $this->hasRole(['super_admin', 'manager']),
+            'staff' => $this->hasRole(['super_admin', 'manager', 'dept_head', 'staff']),
+            'accountant' => $this->hasRole(['super_admin', 'accountant']),
             'client' => $this->hasRole('client'),
-            default  => false,
+            'marketing' => $this->hasRole(['super_admin', 'manager', 'marketing']),
+            default => false,
         };
     }
 
@@ -56,5 +59,11 @@ class User extends Authenticatable implements FilamentUser
     public function availability(): HasMany
     {
         return $this->hasMany(StaffAvailability::class);
+    }
+
+    public function workOrders(): BelongsToMany
+    {
+        return $this->belongsToMany(WorkOrder::class, 'work_order_collaborators')
+            ->withPivot('role', 'added_at');
     }
 }

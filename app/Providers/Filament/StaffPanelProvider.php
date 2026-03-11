@@ -10,6 +10,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -20,6 +21,16 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class StaffPanelProvider extends PanelProvider
 {
+    public function register(): void
+    {
+        parent::register();
+
+        $this->app->bind(
+            \Filament\Http\Responses\Auth\Contracts\LogoutResponse::class,
+            \App\Http\Responses\StaffLogoutResponse::class,
+        );
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -28,13 +39,15 @@ class StaffPanelProvider extends PanelProvider
             ->login()
             ->colors(['primary' => Color::Blue])
             ->brandName('Household Media — Staff')
+            ->databaseNotifications()
+            ->plugin(FilamentFullCalendarPlugin::make())
+            ->sidebarCollapsibleOnDesktop()
+            ->readOnlyRelationManagersOnResourceViewPagesByDefault(false)
             ->discoverResources(in: app_path('Filament/Staff/Resources'), for: 'App\\Filament\\Staff\\Resources')
             ->discoverPages(in: app_path('Filament/Staff/Pages'), for: 'App\\Filament\\Staff\\Pages')
             ->pages([Pages\Dashboard::class])
             ->discoverWidgets(in: app_path('Filament/Staff/Widgets'), for: 'App\\Filament\\Staff\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-            ])
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
