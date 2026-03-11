@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceResource extends Resource
 {
@@ -34,13 +35,34 @@ class InvoiceResource extends Resource
     {
         return $table->columns([
             Tables\Columns\TextColumn::make('invoice_number')->sortable(),
-            Tables\Columns\TextColumn::make('status')->badge()->color(fn ($state) => match ($state) { 'draft' => 'gray', 'sent' => 'info', 'paid' => 'success', 'overdue' => 'danger', 'cancelled' => 'gray', default => 'gray' }),
+            Tables\Columns\TextColumn::make('status')->badge()->color(fn ($state) => match ($state) { 'draft' => 'gray', 'sent' => 'info', 'signed' => 'success', 'paid' => 'success', 'overdue' => 'danger', 'cancelled' => 'gray', default => 'gray' }),
             Tables\Columns\TextColumn::make('total')->money('USD')->sortable(),
             Tables\Columns\TextColumn::make('issued_at')->date()->sortable(),
             Tables\Columns\TextColumn::make('due_at')->date()->sortable(),
         ])
-        ->filters([Tables\Filters\SelectFilter::make('status')->options(['sent' => 'Sent', 'paid' => 'Paid', 'overdue' => 'Overdue'])])
-        ->actions([Tables\Actions\ViewAction::make()]);
+        ->filters([Tables\Filters\SelectFilter::make('status')->options(['sent' => 'Sent', 'signed' => 'Signed', 'paid' => 'Paid', 'overdue' => 'Overdue'])])
+        ->actions([
+            Tables\Actions\ViewAction::make(),
+            Tables\Actions\Action::make('signInvoice')
+                ->label('Sign Invoice')
+                ->icon('heroicon-o-pencil-square')
+                ->color('info')
+                ->visible(fn ($record) => $record->status === 'sent')
+                ->url(fn ($record) => route('invoices.sign.show', ['invoice' => $record->id]))
+                ->openUrlInNewTab(),
+            Tables\Actions\Action::make('downloadPdf')
+                ->label('Download PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->visible(fn ($record) => in_array($record->status, ['signed', 'paid']))
+                ->action(function ($record) {
+                    $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $record]);
+                    return response()->streamDownload(
+                        fn () => print($pdf->output()),
+                        "invoice-{$record->invoice_number}.pdf"
+                    );
+                }),
+        ]);
     }
 
     public static function infolist(Infolist $infolist): Infolist

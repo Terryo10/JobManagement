@@ -26,13 +26,14 @@ class InvoiceItemsRelationManager extends RelationManager
                 ]))
                 ->searchable()
                 ->reactive()
-                ->afterStateUpdated(function (Set $set, $state) {
+                ->afterStateUpdated(function (Set $set, Get $get, $state) {
                     if ($state) {
                         $rc = RateCard::find($state);
                         if ($rc) {
                             $set('description', "{$rc->service_type} — {$rc->category}");
                             $set('unit', $rc->unit);
                             $set('unit_price', $rc->rate);
+                            $set('total', round(($get('quantity') ?: 1) * $rc->rate, 2));
                         }
                     }
                 })

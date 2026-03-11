@@ -16,6 +16,9 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\InvoiceSentToClient;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceResource extends Resource
 {
@@ -38,7 +41,7 @@ class InvoiceResource extends Resource
                         ->relationship('workOrder', 'reference_number')->searchable()->preload()
                         ->helperText('Link to a specific job card'),
                     Forms\Components\Select::make('status')
-                        ->options(['draft' => 'Draft', 'sent' => 'Sent', 'paid' => 'Paid', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled'])
+                        ->options(['draft' => 'Draft', 'sent' => 'Sent', 'paid' => 'Paid', 'signed' => 'Signed', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled'])
                         ->default('draft')->required(),
                     Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
                     Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
@@ -75,7 +78,7 @@ class InvoiceResource extends Resource
             Tables\Columns\TextColumn::make('client.company_name')->sortable()->limit(25),
             Tables\Columns\TextColumn::make('workOrder.reference_number')->label('Job Card')->placeholder('—'),
             Tables\Columns\TextColumn::make('status')->badge()->color(fn ($state) => match ($state) {
-                'draft' => 'gray', 'sent' => 'info', 'paid' => 'success',
+                'draft' => 'gray', 'sent' => 'info', 'signed' => 'success', 'paid' => 'success',
                 'overdue' => 'danger', 'cancelled' => 'gray', default => 'gray',
             }),
             Tables\Columns\TextColumn::make('total')->money('USD')->sortable(),
@@ -85,7 +88,7 @@ class InvoiceResource extends Resource
         ])
         ->filters([
             Tables\Filters\SelectFilter::make('status')->options([
-                'draft' => 'Draft', 'sent' => 'Sent', 'paid' => 'Paid', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled',
+                'draft' => 'Draft', 'sent' => 'Sent', 'signed' => 'Signed', 'paid' => 'Paid', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled',
             ]),
             Tables\Filters\TrashedFilter::make(),
         ])
@@ -93,31 +96,51 @@ class InvoiceResource extends Resource
             Tables\Actions\ViewAction::make(),
             Tables\Actions\EditAction::make(),
             Tables\Actions\Action::make('send')
+                ->label('Send to Client')
                 ->icon('heroicon-o-paper-airplane')
                 ->color('info')
                 ->requiresConfirmation()
-                ->visible(fn ($record) => $record->status === 'draft')
                 ->action(function ($record) {
+                    if (!$record->client || !$record->client->email) {
+                        \Filament\Notifications\Notification::make()->title('Client has no email attached.')->danger()->send();
+                        return;
+                    }
+
                     $record->update([
                         'status' => 'sent',
                         'issued_at' => $record->issued_at ?? now(),
                     ]);
-                    // Notify the client user
+                    
+                    // Dispatch the email with the signed URL
+                    Mail::to($record->client->email)->send(new InvoiceSentToClient($record));
+
+                    // Notify the client user in the dashboard if they exist
                     $clientUser = \App\Models\User::where('email', $record->client?->email)->first();
                     if ($clientUser) {
-                        $clientUser->notify(new \App\Notifications\DatabaseAlert(
-                            title: 'New Invoice Received',
-                            body: "Invoice {$record->invoice_number} for \${$record->total} has been sent to you",
-                            icon: 'heroicon-o-document-currency-dollar',
-                            color: 'info',
-                        ));
+                        $signedUrl = route('invoices.sign.show', ['invoice' => $record->id]);
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('New Invoice Received')
+                            ->body("Invoice {$record->invoice_number} for \${$record->total} has been sent to you. Click below to review and sign.")
+                            ->icon('heroicon-o-document-currency-dollar')
+                            ->info()
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('sign')
+                                    ->label('Review & Sign')
+                                    ->url($signedUrl)
+                                    ->openUrlInNewTab()
+                                    ->button()
+                            ])
+                            ->sendToDatabase($clientUser);
                     }
+                    
+                    \Filament\Notifications\Notification::make()->title('Invoice sent to client.')->success()->send();
                 }),
             Tables\Actions\Action::make('markPaid')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn ($record) => in_array($record->status, ['sent', 'overdue']))
+                ->visible(fn ($record) => in_array($record->status, ['sent', 'signed', 'overdue']))
                 ->action(function ($record) {
                     $record->update([
                         'status' => 'paid',
@@ -126,13 +149,24 @@ class InvoiceResource extends Resource
                     // Notify the client user
                     $clientUser = \App\Models\User::where('email', $record->client?->email)->first();
                     if ($clientUser) {
-                        $clientUser->notify(new \App\Notifications\DatabaseAlert(
-                            title: 'Payment Confirmed',
-                            body: "Invoice {$record->invoice_number} has been marked as paid. Thank you!",
-                            icon: 'heroicon-o-check-badge',
-                            color: 'success',
-                        ));
+                        \Filament\Notifications\Notification::make()
+                            ->title('Payment Confirmed')
+                            ->body("Invoice {$record->invoice_number} has been marked as paid. Thank you!")
+                            ->icon('heroicon-o-check-badge')
+                            ->success()
+                            ->sendToDatabase($clientUser);
                     }
+                }),
+            Tables\Actions\Action::make('downloadPdf')
+                ->label('Download PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->action(function ($record) {
+                    $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $record]);
+                    return response()->streamDownload(
+                        fn () => print($pdf->output()),
+                        "invoice-{$record->invoice_number}.pdf"
+                    );
                 }),
         ])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
