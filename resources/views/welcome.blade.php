@@ -246,6 +246,20 @@
                     <span class="portal-arrow">Login &rarr;</span>
                 </a>
 
+                {{-- Marketing --}}
+                <a href="/marketing" class="portal-card">
+                    <div class="portal-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </div>
+                    <span class="portal-label">Marketing Portal</span>
+                    <span class="portal-roles">Marketing Team<br>Business Dev.</span>
+                    <span class="portal-arrow">Login &rarr;</span>
+                </a>
+
                 {{-- Client --}}
                 <a href="/client" class="portal-card">
                     <div class="portal-icon">

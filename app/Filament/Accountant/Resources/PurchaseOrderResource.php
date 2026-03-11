@@ -12,6 +12,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PurchaseOrderResource extends Resource
 {
@@ -88,6 +89,18 @@ class PurchaseOrderResource extends Resource
                 ->action(function ($record) {
                     $record->update(['status' => 'approved', 'approved_by' => auth()->id()]);
                     Notification::make()->title('Purchase order approved.')->success()->send();
+                }),
+            Tables\Actions\Action::make('downloadPdf')
+                ->label('Download Requisition')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->action(function ($record) {
+                    $record->load('items', 'supplier', 'orderedBy', 'approvedBy');
+                    $pdf = Pdf::loadView('pdf.payment-requisition', ['purchaseOrder' => $record]);
+                    return response()->streamDownload(
+                        fn () => print($pdf->output()),
+                        "requisition-{$record->reference_number}.pdf"
+                    );
                 }),
         ]);
     }

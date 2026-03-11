@@ -2,13 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Models\BusinessReport;
 use App\Models\Client;
 use App\Models\Department;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Lead;
+use App\Models\MarketResearch;
 use App\Models\Material;
+use App\Models\NetworkingEvent;
 use App\Models\NotificationRule;
+use App\Models\Proposal;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\RateCard;
@@ -26,7 +30,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // ── Roles ────────────────────────────────────────
-        $roles = ['super_admin', 'manager', 'dept_head', 'staff', 'accountant', 'client'];
+        $roles = ['super_admin', 'manager', 'dept_head', 'staff', 'accountant', 'client', 'marketing'];
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
@@ -97,6 +101,12 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Demo Client', 'password' => Hash::make('password'), 'is_active' => true]
         );
         $clientUser->assignRole('client');
+
+        $marketingUser = User::firstOrCreate(
+            ['email' => 'marketing@householdmedia.co.zw'],
+            ['name' => 'Sarah BD', 'password' => Hash::make('password'), 'is_active' => true, 'department_id' => $deptModels['Marketing']->id]
+        );
+        $marketingUser->assignRole('marketing');
 
         // ── Clients ──────────────────────────────────────
         $client1 = Client::firstOrCreate(
@@ -367,6 +377,31 @@ class DatabaseSeeder extends Seeder
             NotificationRule::firstOrCreate(['rule_key' => $rule['rule_key']], $rule);
         }
 
+        // ── Marketing Sample Data ───────────────────────
+        Proposal::firstOrCreate(
+            ['title' => 'Econet Solar Rollout 2026'],
+            ['client_id' => $client3->id, 'prepared_by' => $marketingUser->id, 'type' => 'proposal', 'status' => 'submitted', 'value' => 150000, 'currency' => 'USD', 'submitted_at' => now()->subDays(2), 'valid_until' => now()->addDays(28), 'content' => '<p>Proposal for full solar rollout...</p>']
+        );
+        Proposal::firstOrCreate(
+            ['title' => 'Old Mutual Branding Refresh'],
+            ['client_id' => $client2->id, 'prepared_by' => $marketingUser->id, 'type' => 'pitch', 'status' => 'draft', 'value' => 25000, 'currency' => 'USD']
+        );
+
+        MarketResearch::firstOrCreate(
+            ['title' => 'Digital Billboard Adoption Q1 2026'],
+            ['category' => 'trend', 'summary' => 'Rising demand for DOOH in Harare CBD.', 'source' => 'ZimAds Report', 'findings' => '<ul><li>30% increase in DOOH</li></ul>', 'researched_by' => $marketingUser->id, 'research_date' => now()->subDays(10)]
+        );
+
+        NetworkingEvent::firstOrCreate(
+            ['name' => 'ZimTrade Exporters Conference'],
+            ['type' => 'conference', 'location' => 'HICC, Harare', 'start_date' => now()->addDays(15), 'end_date' => now()->addDays(16), 'description' => 'Annual exporters conference.', 'created_by' => $marketingUser->id]
+        );
+
+        BusinessReport::firstOrCreate(
+            ['title' => 'Q1 Growth Strategy'],
+            ['type' => 'growth_strategy', 'client_id' => null, 'content' => '<p>Focus on energy sector...</p>', 'prepared_by' => $marketingUser->id, 'status' => 'draft']
+        );
+
         // ── Output ───────────────────────────────────────
         $this->command->info('✅ Seed data created successfully.');
         $this->command->newLine();
@@ -380,6 +415,7 @@ class DatabaseSeeder extends Seeder
                 ['staff', 'staff2@householdmedia.co.zw', 'password'],
                 ['staff', 'staff3@householdmedia.co.zw', 'password'],
                 ['accountant', 'accountant@householdmedia.co.zw', 'password'],
+                ['marketing', 'marketing@householdmedia.co.zw', 'password'],
                 ['client', 'client@example.com', 'password'],
             ]
         );
