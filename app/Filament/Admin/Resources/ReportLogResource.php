@@ -22,7 +22,13 @@ class ReportLogResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('scheduled_report_id')->relationship('scheduledReport', 'name')->searchable()->preload(),
             Forms\Components\TextInput::make('report_type')->required()->maxLength(100),
-            Forms\Components\Select::make('generated_by')->relationship('generatedBy', 'name')->searchable()->preload(),
+            Forms\Components\Select::make('generated_by')
+                ->relationship('generatedBy', 'name')
+                ->searchable()
+                ->preload()
+                ->default(fn () => auth()->id())
+                ->disabled()
+                ->dehydrated(),
             Forms\Components\Select::make('status')->options(['generating' => 'Generating', 'completed' => 'Completed', 'failed' => 'Failed'])->default('generating')->required(),
             Forms\Components\TextInput::make('file_path')->maxLength(255),
             Forms\Components\DateTimePicker::make('generated_at'),

@@ -14,6 +14,7 @@ class TaskTimeLogResource extends Resource
 {
     protected static ?string $model = TaskTimeLog::class;
     protected static ?string $navigationIcon = 'heroicon-o-clock';
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?string $navigationGroup = 'Operations';
     protected static ?int $navigationSort = 6;
 

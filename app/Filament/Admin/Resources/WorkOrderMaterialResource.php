@@ -14,6 +14,7 @@ class WorkOrderMaterialResource extends Resource
 {
     protected static ?string $model = WorkOrderMaterial::class;
     protected static ?string $navigationIcon = 'heroicon-o-cube';
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?string $navigationGroup = 'Operations';
     protected static ?int $navigationSort = 3;
 

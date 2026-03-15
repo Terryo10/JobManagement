@@ -22,11 +22,7 @@ class OverdueInvoicesWidget extends TableWidget
                 Tables\Columns\TextColumn::make('total')->money('USD'),
                 Tables\Columns\TextColumn::make('due_at')->date()->color('danger'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('view')
-                    ->url(fn (Invoice $record): string => route('filament.accountant.resources.invoices.view', ['record' => $record]))
-                    ->icon('heroicon-m-eye'),
-            ])
+            ->recordUrl(fn (Invoice $record): string => route('filament.accountant.resources.invoices.view', ['record' => $record]))
             ->paginated([5]);
     }
 }

@@ -15,7 +15,7 @@ class DeadlineEscalationResource extends Resource
     protected static ?string $model = DeadlineEscalation::class;
     protected static ?string $navigationIcon = 'heroicon-o-exclamation-triangle';
     protected static ?string $navigationGroup = 'Operations';
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {

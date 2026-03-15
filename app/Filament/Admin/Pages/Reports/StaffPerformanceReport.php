@@ -36,16 +36,16 @@ class StaffPerformanceReport extends Page implements HasTable
                     ->groupBy('assigned_to')
             )
             ->columns([
-                TextColumn::make('assignedTo.name')->label('Staff Member')->searchable(),
+                TextColumn::make('assignedTo.name')->label('Staff Member')->searchable()->default('—'),
                 TextColumn::make('total_tasks')->label('Total Tasks')->sortable(),
                 TextColumn::make('completed_tasks')->label('Completed')->sortable(),
                 TextColumn::make('completion_rate')
                     ->label('Completion %')
-                    ->getStateUsing(fn ($record) => $record->total_tasks > 0
+                    ->getStateUsing(fn ($record) => ($record->total_tasks ?? 0) > 0
                         ? round(($record->completed_tasks / $record->total_tasks) * 100) . '%'
                         : '0%')
                     ->badge()
-                    ->color(fn ($state) => (int) $state >= 80 ? 'success' : ((int) $state >= 50 ? 'warning' : 'danger')),
+                    ->color(fn ($state) => is_string($state) && (int) $state >= 80 ? 'success' : ((int) ($state ?? 0) >= 50 ? 'warning' : 'danger')),
                 TextColumn::make('total_actual_hours')->label('Actual Hrs')->numeric(1)->suffix(' hrs'),
                 TextColumn::make('total_estimated_hours')->label('Est. Hrs')->numeric(1)->suffix(' hrs'),
                 TextColumn::make('efficiency')

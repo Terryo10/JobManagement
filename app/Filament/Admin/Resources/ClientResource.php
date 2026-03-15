@@ -45,6 +45,7 @@ class ClientResource extends Resource
             Tables\Columns\TextColumn::make('phone'),
             Tables\Columns\TextColumn::make('city'),
             Tables\Columns\IconColumn::make('is_active')->boolean(),
+            Tables\Columns\TextColumn::make('createdBy.name')->label('Created By')->default('—')->toggleable(),
             Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
         ])
         ->filters([

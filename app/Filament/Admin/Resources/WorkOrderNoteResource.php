@@ -14,6 +14,7 @@ class WorkOrderNoteResource extends Resource
 {
     protected static ?string $model = WorkOrderNote::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?string $navigationGroup = 'Operations';
     protected static ?int $navigationSort = 2;
 

@@ -26,22 +26,40 @@ class TaskObserver
 
     public function updated(Task $task): void
     {
-        // Notify Super Admin when a task is claimed
+        // Notify managers when a task is released (claimed_by cleared)
+        if ($task->isDirty('claimed_by') && !$task->claimed_by && $task->getOriginal('claimed_by')) {
+            $releasedBy = User::find($task->getOriginal('claimed_by'));
+            $managers = User::role(['manager', 'super_admin'])->get();
+            foreach ($managers as $manager) {
+                $manager->notify(new DatabaseAlert(
+                    title: 'Task Released',
+                    body: "Task \"{$task->title}\" was released by {$releasedBy?->name}",
+                    icon: 'heroicon-o-arrow-uturn-left',
+                    color: 'warning',
+                ));
+            }
+        }
+
+        // Notify Super Admin when a task is claimed or assigned
         if ($task->isDirty('claimed_by') && $task->claimed_by) {
-            $claimer = User::find($task->claimed_by);
+            $assignee = User::find($task->claimed_by);
+            $isSelfClaim = auth()->check() && auth()->id() === (int) $task->claimed_by;
             $admins = User::role('super_admin')->get();
             foreach ($admins as $admin) {
                 $admin->notify(new DatabaseAlert(
-                    title: 'Task Claimed',
-                    body: "\"{$task->title}\" was claimed by {$claimer?->name}",
-                    icon: 'heroicon-o-hand-raised',
+                    title: $isSelfClaim ? 'Task Claimed' : 'Task Assigned',
+                    body: $isSelfClaim
+                        ? "\"{$task->title}\" was claimed by {$assignee?->name}"
+                        : "\"{$task->title}\" assigned to {$assignee?->name}",
+                    icon: $isSelfClaim ? 'heroicon-o-hand-raised' : 'heroicon-o-user-plus',
                     color: 'info',
                 ));
             }
         }
 
-        // Notify on assignment change
-        if ($task->isDirty('assigned_to') && $task->assigned_to) {
+        // Notify assignee on assignment change — skip if they just self-claimed (they already know)
+        $isSelfClaim = auth()->check() && auth()->id() === (int) $task->assigned_to;
+        if ($task->isDirty('assigned_to') && $task->assigned_to && !$isSelfClaim) {
             $assignee = User::find($task->assigned_to);
             if ($assignee) {
                 $assignee->notify(new DatabaseAlert(

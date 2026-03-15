@@ -10,14 +10,14 @@ class StaffAvailability extends Model
     protected $table = 'staff_availability';
     protected $fillable = [
         'user_id', 'unavailable_from', 'unavailable_to',
-        'reason', 'notes', 'approved_by',
+        'reason', 'notes', 'approved_by', 'status', 'admin_note',
     ];
 
     protected function casts(): array
     {
         return [
             'unavailable_from' => 'date',
-            'unavailable_to' => 'date',
+            'unavailable_to'   => 'date',
         ];
     }
 

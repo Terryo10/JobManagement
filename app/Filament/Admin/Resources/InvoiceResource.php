@@ -4,21 +4,23 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\InvoiceResource\Pages;
 use App\Filament\Admin\Resources\InvoiceResource\RelationManagers;
+use App\Mail\InvoiceSentToClient;
 use App\Models\Invoice;
-use App\Models\WorkOrder;
 use App\Models\RateCard;
+use App\Models\WorkOrder;
+use App\Services\AiReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\InvoiceSentToClient;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceResource extends Resource
 {
@@ -167,6 +169,67 @@ class InvoiceResource extends Resource
                         fn () => print($pdf->output()),
                         "invoice-{$record->invoice_number}.pdf"
                     );
+                }),
+            Tables\Actions\Action::make('aiNotes')
+                ->label('AI Notes')
+                ->icon('heroicon-o-sparkles')
+                ->color('info')
+                ->modalHeading('AI-Generated Invoice Notes')
+                ->modalDescription('Review the AI-generated notes and click "Use These Notes" to apply them.')
+                ->form([
+                    Forms\Components\Textarea::make('generated_notes')
+                        ->label('Generated Notes')
+                        ->rows(5)
+                        ->default(function ($record) {
+                            $record->load('items', 'client', 'workOrder');
+                            return (new AiReportService())->generateInvoiceNotes($record);
+                        })
+                        ->required(),
+                ])
+                ->action(function ($record, array $data) {
+                    $record->update(['notes' => $data['generated_notes']]);
+                    Notification::make()->title('Notes updated.')->success()->send();
+                })
+                ->modalSubmitActionLabel('Use These Notes'),
+            Tables\Actions\Action::make('aiLineItems')
+                ->label('AI Line Items')
+                ->icon('heroicon-o-list-bullet')
+                ->color('warning')
+                ->visible(fn ($record) => $record->work_order_id !== null)
+                ->modalHeading('AI-Suggested Line Items')
+                ->modalDescription('The AI will suggest line items based on the linked work order\'s tasks and expenses. Confirming will add them to this invoice.')
+                ->requiresConfirmation()
+                ->modalSubmitActionLabel('Add Line Items')
+                ->action(function ($record) {
+                    $record->load('workOrder.tasks', 'workOrder.expenses');
+                    $items = (new AiReportService())->suggestInvoiceItems($record);
+
+                    if (empty($items)) {
+                        Notification::make()->title('No items could be generated. Make sure the work order has tasks or expenses.')->warning()->send();
+                        return;
+                    }
+
+                    $subtotal = 0;
+                    foreach ($items as $item) {
+                        $total = round((float) ($item['quantity'] ?? 1) * (float) ($item['unit_price'] ?? 0), 2);
+                        $record->items()->create([
+                            'description' => $item['description'] ?? 'Service',
+                            'quantity'    => $item['quantity'] ?? 1,
+                            'unit'        => $item['unit'] ?? 'each',
+                            'unit_price'  => $item['unit_price'] ?? 0,
+                            'total'       => $total,
+                        ]);
+                        $subtotal += $total;
+                    }
+
+                    $taxAmount = round($subtotal * (($record->tax_rate ?? 0) / 100), 2);
+                    $record->update([
+                        'subtotal'   => $subtotal,
+                        'tax_amount' => $taxAmount,
+                        'total'      => $subtotal + $taxAmount,
+                    ]);
+
+                    Notification::make()->title(count($items) . ' line items added.')->success()->send();
                 }),
         ])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);

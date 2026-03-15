@@ -81,22 +81,32 @@ class StaffAvailabilityResource extends Resource
                         default            => ucfirst($state ?? 'Other'),
                     })
                     ->color(fn ($state) => match ($state) {
-                        'leave'  => 'info',
-                        'sick'   => 'warning',
+                        'leave'            => 'info',
+                        'sick'             => 'warning',
                         'field_deployment' => 'success',
-                        'training' => 'primary',
-                        default  => 'gray',
+                        'training'         => 'primary',
+                        default            => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('approvedBy.name')
-                    ->label('Approved By')
-                    ->placeholder('Pending approval')
+                Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn ($state) => $state ? 'success' : 'warning'),
+                    ->color(fn ($state) => match ($state) {
+                        'approved' => 'success',
+                        'denied'   => 'danger',
+                        default    => 'warning',
+                    }),
+                Tables\Columns\TextColumn::make('admin_note')
+                    ->label('Admin Note')
+                    ->placeholder('—')
+                    ->limit(50)
+                    ->wrap(),
             ])
             ->defaultSort('unavailable_from', 'desc')
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                // Staff can only edit/delete pending requests
+                Tables\Actions\EditAction::make()
+                    ->hidden(fn (StaffAvailability $record) => $record->status !== 'pending'),
+                Tables\Actions\DeleteAction::make()
+                    ->hidden(fn (StaffAvailability $record) => $record->status !== 'pending'),
             ])
             ->emptyStateHeading('No leave requests yet')
             ->emptyStateDescription('Submit a request so management knows when you\'re unavailable. Your calendar will show blocked-out periods.')

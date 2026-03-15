@@ -46,10 +46,6 @@ class ActiveJobsWidget extends BaseWidget
                     ->color(fn ($record) => $record->deadline && $record->deadline->isPast() ? 'danger' : null),
             ])
             ->paginated(false)
-            ->actions([
-                Tables\Actions\Action::make('view')
-                    ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => route('filament.admin.resources.work-orders.view', $record)),
-            ]);
+            ->recordUrl(fn ($record) => route('filament.admin.resources.work-orders.view', $record));
     }
 }

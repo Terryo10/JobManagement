@@ -8,4 +8,11 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateReportLog extends CreateRecord
 {
     protected static string $resource = ReportLogResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['generated_by'] = auth()->id();
+
+        return $data;
+    }
 }

@@ -23,11 +23,7 @@ class PendingApprovalsWidget extends TableWidget
                 Tables\Columns\TextColumn::make('submittedBy.name')->label('Submitted By'),
                 Tables\Columns\TextColumn::make('expense_date')->date(),
             ])
-            ->actions([
-                Tables\Actions\Action::make('review')
-                    ->url(fn (Expense $record): string => route('filament.accountant.resources.expenses.edit', ['record' => $record]))
-                    ->icon('heroicon-m-pencil-square'),
-            ])
+            ->recordUrl(fn (Expense $record): string => route('filament.accountant.resources.expenses.edit', ['record' => $record]))
             ->paginated([5]);
     }
 }

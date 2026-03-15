@@ -14,8 +14,9 @@ class EquipmentResource extends Resource
 {
     protected static ?string $model = Equipment::class;
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
-    protected static ?string $navigationGroup = 'Division';
-    protected static ?int $navigationSort = 2;
+    protected static ?string $navigationGroup = 'Operations';
+    protected static ?string $navigationLabel = 'Equipment';
+    protected static ?int $navigationSort = 6;
 
     public static function form(Form $form): Form
     {

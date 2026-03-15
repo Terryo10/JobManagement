@@ -42,6 +42,7 @@ class OverdueTasksWidget extends BaseWidget
                     ->color(fn ($record) => $record->deadline && $record->deadline->isPast() ? 'danger' : null),
                 Tables\Columns\TextColumn::make('completion_percentage')->suffix('%'),
             ])
-            ->paginated(false);
+            ->paginated(false)
+            ->recordUrl(fn ($record) => route('filament.admin.resources.tasks.view', $record));
     }
 }

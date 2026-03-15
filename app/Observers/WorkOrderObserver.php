@@ -39,15 +39,32 @@ class WorkOrderObserver
 
     public function updated(WorkOrder $workOrder): void
     {
-        // Notify Super Admin when a job is claimed
+        // Notify managers when a job is released (claimed_by cleared)
+        if ($workOrder->isDirty('claimed_by') && !$workOrder->claimed_by && $workOrder->getOriginal('claimed_by')) {
+            $releasedBy = User::find($workOrder->getOriginal('claimed_by'));
+            $managers = User::role(['manager', 'super_admin'])->get();
+            foreach ($managers as $manager) {
+                $manager->notify(new DatabaseAlert(
+                    title: 'Job Released',
+                    body: "{$workOrder->reference_number} was released by {$releasedBy?->name}",
+                    icon: 'heroicon-o-arrow-uturn-left',
+                    color: 'warning',
+                ));
+            }
+        }
+
+        // Notify Super Admin when a job is claimed or assigned
         if ($workOrder->isDirty('claimed_by') && $workOrder->claimed_by) {
-            $claimer = User::find($workOrder->claimed_by);
+            $assignee = User::find($workOrder->claimed_by);
+            $isSelfClaim = auth()->check() && auth()->id() === (int) $workOrder->claimed_by;
             $admins = User::role('super_admin')->get();
             foreach ($admins as $admin) {
                 $admin->notify(new DatabaseAlert(
-                    title: 'Job Claimed',
-                    body: "{$workOrder->reference_number} was claimed by {$claimer?->name}",
-                    icon: 'heroicon-o-hand-raised',
+                    title: $isSelfClaim ? 'Job Claimed' : 'Job Assigned',
+                    body: $isSelfClaim
+                        ? "{$workOrder->reference_number} was claimed by {$assignee?->name}"
+                        : "{$workOrder->reference_number} assigned to {$assignee?->name}",
+                    icon: $isSelfClaim ? 'heroicon-o-hand-raised' : 'heroicon-o-user-plus',
                     color: 'info',
                 ));
             }

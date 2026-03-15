@@ -142,11 +142,10 @@ class SendScheduledNotifications extends Command
     {
         $count = 0;
         $materials = Material::where('is_active', true)
-            ->whereHas('stockLevel', function ($q) {
-                $q->whereColumn('current_quantity', '<=', 'materials.minimum_stock_level');
-            })
+            ->whereNotNull('minimum_stock_level')
             ->with('stockLevel')
-            ->get();
+            ->get()
+            ->filter(fn ($m) => $m->stockLevel && $m->stockLevel->current_quantity <= $m->minimum_stock_level);
 
         foreach ($materials as $material) {
             $recipients = $this->getRecipients($rule);
@@ -174,12 +173,13 @@ class SendScheduledNotifications extends Command
         foreach ($invoices as $invoice) {
             $invoice->update(['status' => 'overdue']);
             $daysOverdue = now()->diffInDays($invoice->due_at);
+            $clientName = $invoice->client?->company_name ?? 'Unknown Client';
             $recipients = $this->getRecipients($rule);
 
             foreach ($recipients as $user) {
                 Notification::make()
                     ->title('Invoice Overdue')
-                    ->body("Invoice {$invoice->invoice_number} for {$invoice->client->company_name} — {$daysOverdue} day(s) overdue (\${$invoice->total})")
+                    ->body("Invoice {$invoice->invoice_number} for {$clientName} — {$daysOverdue} day(s) overdue (\${$invoice->total})")
                     ->icon('heroicon-o-document-currency-dollar')
                     ->danger()
                     ->sendToDatabase($user);

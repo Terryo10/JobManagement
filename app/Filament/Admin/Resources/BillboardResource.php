@@ -14,8 +14,9 @@ class BillboardResource extends Resource
 {
     protected static ?string $model = Billboard::class;
     protected static ?string $navigationIcon = 'heroicon-o-photo';
-    protected static ?string $navigationGroup = 'Division';
-    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationGroup = 'Operations';
+    protected static ?string $navigationLabel = 'Billboards';
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

@@ -31,6 +31,7 @@ class RecentLeadsWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('follow_up_date')->date()
                     ->color(fn ($record) => $record->follow_up_date && $record->follow_up_date->isPast() ? 'danger' : null),
             ])
-            ->paginated(false);
+            ->paginated(false)
+            ->recordUrl(fn (Lead $record) => route('filament.admin.resources.leads.edit', $record));
     }
 }

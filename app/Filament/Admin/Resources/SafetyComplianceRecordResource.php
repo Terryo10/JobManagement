@@ -15,7 +15,7 @@ class SafetyComplianceRecordResource extends Resource
     protected static ?string $model = SafetyComplianceRecord::class;
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationGroup = 'Operations';
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form
     {

@@ -14,6 +14,7 @@ class TaskCommentResource extends Resource
 {
     protected static ?string $model = TaskComment::class;
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-oval-left';
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?string $navigationGroup = 'Operations';
     protected static ?int $navigationSort = 5;
 
