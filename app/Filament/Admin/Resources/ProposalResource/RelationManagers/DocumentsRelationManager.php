@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Admin\Resources\WorkOrderResource\RelationManagers;
+namespace App\Filament\Admin\Resources\ProposalResource\RelationManagers;
 
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -21,9 +21,16 @@ class DocumentsRelationManager extends RelationManager
             Forms\Components\FileUpload::make('file_path')
                 ->label('File')
                 ->disk('contabo')
-                ->directory('documents/work-orders')
+                ->directory('documents/proposals')
                 ->visibility('public')
-                ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
+                ->acceptedFileTypes([
+                    'application/pdf',
+                    'image/*',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ])
                 ->maxSize(10240)
                 ->required()
                 ->columnSpanFull(),
@@ -42,13 +49,15 @@ class DocumentsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->label('Uploaded'),
             ])
             ->defaultSort('created_at', 'desc')
-            ->headerActions([Tables\Actions\CreateAction::make()->mutateFormDataUsing(function (array $data): array {
-                $data['uploaded_by'] = auth()->id();
-                if (isset($data['file_path'])) {
-                    $data['mime_type'] = pathinfo($data['file_path'], PATHINFO_EXTENSION);
-                }
-                return $data;
-            })])
+            ->headerActions([
+                Tables\Actions\CreateAction::make()->mutateFormDataUsing(function (array $data): array {
+                    $data['uploaded_by'] = auth()->id();
+                    if (isset($data['file_path'])) {
+                        $data['mime_type'] = pathinfo($data['file_path'], PATHINFO_EXTENSION);
+                    }
+                    return $data;
+                }),
+            ])
             ->actions([
                 Tables\Actions\Action::make('download')
                     ->icon('heroicon-o-arrow-down-tray')
@@ -57,6 +66,8 @@ class DocumentsRelationManager extends RelationManager
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
-            ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
+            ]);
     }
 }

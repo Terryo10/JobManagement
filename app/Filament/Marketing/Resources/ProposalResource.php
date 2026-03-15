@@ -3,6 +3,7 @@
 namespace App\Filament\Marketing\Resources;
 
 use App\Filament\Marketing\Resources\ProposalResource\Pages;
+use App\Filament\Marketing\Resources\ProposalResource\RelationManagers\DocumentsRelationManager;
 use App\Models\Proposal;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -63,6 +64,13 @@ class ProposalResource extends Resource
         ])
         ->actions([Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
