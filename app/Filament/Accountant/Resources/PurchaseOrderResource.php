@@ -126,6 +126,7 @@ class PurchaseOrderResource extends Resource
     {
         return [
             \App\Filament\Accountant\Resources\PurchaseOrderResource\RelationManagers\ItemsRelationManager::class,
+            \App\Filament\Accountant\Resources\PurchaseOrderResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }
 

@@ -50,8 +50,15 @@ class MarketResearchResource extends Resource
                 'opportunity' => 'Market Opportunity', 'industry_report' => 'Industry Report',
             ]),
         ])
-        ->actions([Tables\Actions\EditAction::make(), Tables\Actions\ViewAction::make()])
+        ->actions([Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Marketing\Resources\MarketResearchResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -59,6 +66,7 @@ class MarketResearchResource extends Resource
         return [
             'index'  => Pages\ListMarketResearch::route('/'),
             'create' => Pages\CreateMarketResearch::route('/create'),
+            'view'   => Pages\ViewMarketResearch::route('/{record}'),
             'edit'   => Pages\EditMarketResearch::route('/{record}/edit'),
         ];
     }

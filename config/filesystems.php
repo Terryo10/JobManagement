@@ -60,6 +60,8 @@ return [
             'report' => false,
         ],
 
+
+
         'contabo' => [
             'driver' => 's3',
             'key' => env('CONTABO_ACCESS_KEY'),

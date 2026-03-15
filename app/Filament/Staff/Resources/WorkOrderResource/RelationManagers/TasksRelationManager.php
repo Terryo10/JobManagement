@@ -167,6 +167,12 @@ class TasksRelationManager extends RelationManager
                         $record->release();
                         Notification::make()->title('Task released back to queue.')->success()->send();
                     }),
+                Tables\Actions\Action::make('documents')
+                    ->label('Documents')
+                    ->icon('heroicon-o-paper-clip')
+                    ->color('gray')
+                    ->url(fn ($record) => \App\Filament\Staff\Resources\TaskResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make()
                     ->label('Update'),
             ])

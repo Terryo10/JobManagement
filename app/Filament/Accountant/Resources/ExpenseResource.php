@@ -62,6 +62,7 @@ class ExpenseResource extends Resource
             ]),
         ])
         ->actions([
+            Tables\Actions\ViewAction::make(),
             Tables\Actions\EditAction::make()->label('Review'),
             Tables\Actions\Action::make('approve')
                 ->label('Approve')
@@ -94,7 +95,9 @@ class ExpenseResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Accountant\Resources\ExpenseResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -102,6 +105,7 @@ class ExpenseResource extends Resource
         return [
             'index'  => Pages\ListExpenses::route('/'),
             'create' => Pages\CreateExpense::route('/create'),
+            'view'   => Pages\ViewExpense::route('/{record}'),
             'edit'   => Pages\EditExpense::route('/{record}/edit'),
         ];
     }

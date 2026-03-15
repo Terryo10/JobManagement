@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Equipment extends Model
 {
@@ -23,5 +24,10 @@ class Equipment extends Model
     public function currentWorkOrder(): BelongsTo
     {
         return $this->belongsTo(WorkOrder::class, 'current_work_order_id');
+    }
+
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(Document::class, 'documentable');
     }
 }

@@ -74,7 +74,7 @@ class EquipmentResource extends Resource
                 Tables\Columns\TextColumn::make('currentWorkOrder.reference_number')
                     ->label('Current Job')
                     ->default('—'),
-                Tables\Columns\TextColumn::make('next_maintenance_date')->date()->sortable()->default('—'),
+                Tables\Columns\TextColumn::make('next_maintenance_date')->date()->sortable()->placeholder('—'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -83,6 +83,7 @@ class EquipmentResource extends Resource
                     ->options(['civil_works' => 'Civil Works', 'energy' => 'Energy']),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->visible(fn () => auth()->user()?->hasAnyRole(['manager', 'dept_head', 'super_admin'])),
             ]);
@@ -90,7 +91,9 @@ class EquipmentResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Staff\Resources\EquipmentResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -98,6 +101,7 @@ class EquipmentResource extends Resource
         return [
             'index'  => Pages\ListEquipment::route('/'),
             'create' => Pages\CreateEquipment::route('/create'),
+            'view'   => Pages\ViewEquipment::route('/{record}'),
             'edit'   => Pages\EditEquipment::route('/{record}/edit'),
         ];
     }

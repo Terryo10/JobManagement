@@ -108,6 +108,7 @@ class TaskResource extends Resource
                     }),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\Action::make('claim')
                     ->label('Claim Task')
                     ->icon('heroicon-o-hand-raised')
@@ -144,7 +145,9 @@ class TaskResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Staff\Resources\TaskResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -152,6 +155,7 @@ class TaskResource extends Resource
         return [
             'index' => Pages\ListTasks::route('/'),
             'create' => Pages\CreateTask::route('/create'),
+            'view' => Pages\ViewTask::route('/{record}'),
             'edit' => Pages\EditTask::route('/{record}/edit'),
         ];
     }

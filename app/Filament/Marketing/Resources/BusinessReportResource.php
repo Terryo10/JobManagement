@@ -62,8 +62,15 @@ class BusinessReportResource extends Resource
                 'draft' => 'Draft', 'final' => 'Final', 'submitted' => 'Submitted',
             ]),
         ])
-        ->actions([Tables\Actions\EditAction::make()])
+        ->actions([Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Marketing\Resources\BusinessReportResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -71,6 +78,7 @@ class BusinessReportResource extends Resource
         return [
             'index'  => Pages\ListBusinessReports::route('/'),
             'create' => Pages\CreateBusinessReport::route('/create'),
+            'view'   => Pages\ViewBusinessReport::route('/{record}'),
             'edit'   => Pages\EditBusinessReport::route('/{record}/edit'),
         ];
     }

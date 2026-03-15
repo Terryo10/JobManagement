@@ -259,6 +259,7 @@ class InvoiceResource extends Resource
     {
         return [
             RelationManagers\InvoiceItemsRelationManager::class,
+            \App\Filament\Admin\Resources\InvoiceResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }
 

@@ -151,6 +151,7 @@ class PurchaseOrderResource extends Resource
     {
         return [
             RelationManagers\ItemsRelationManager::class,
+            \App\Filament\Admin\Resources\PurchaseOrderResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }
 

@@ -41,13 +41,15 @@ class SupplierResource extends Resource
             Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
         ])
         ->filters([Tables\Filters\TernaryFilter::make('is_active')])
-        ->actions([Tables\Actions\EditAction::make()])
+        ->actions([Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Admin\Resources\SupplierResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -55,6 +57,7 @@ class SupplierResource extends Resource
         return [
             'index'  => Pages\ListSuppliers::route('/'),
             'create' => Pages\CreateSupplier::route('/create'),
+            'view'   => Pages\ViewSupplier::route('/{record}'),
             'edit'   => Pages\EditSupplier::route('/{record}/edit'),
         ];
     }

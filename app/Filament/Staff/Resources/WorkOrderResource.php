@@ -473,6 +473,7 @@ class WorkOrderResource extends Resource
             \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\MaterialsRelationManager::class,
             \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\SafetyChecklistRelationManager::class,
             \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\CollaboratorsRelationManager::class,
+            \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }
 

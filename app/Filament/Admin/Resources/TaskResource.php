@@ -141,6 +141,7 @@ class TaskResource extends Resource
             RelationManagers\SubtasksRelationManager::class,
             RelationManagers\CommentsRelationManager::class,
             RelationManagers\TimeLogsRelationManager::class,
+            RelationManagers\DocumentsRelationManager::class,
         ];
     }
 

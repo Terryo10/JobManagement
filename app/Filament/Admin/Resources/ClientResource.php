@@ -78,6 +78,7 @@ class ClientResource extends Resource
             RelationManagers\LeadsRelationManager::class,
             RelationManagers\WorkOrdersRelationManager::class,
             RelationManagers\InvoicesRelationManager::class,
+            \App\Filament\Admin\Resources\ClientResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }
 
