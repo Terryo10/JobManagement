@@ -9,15 +9,18 @@ class NotificationPreference extends Model
 {
     protected $fillable = [
         'user_id', 'notification_type',
-        'channel_database', 'channel_mail', 'channel_sms',
+        'channel_database', 'channel_mail', 'channel_sms', 'channel_whatsapp',
+        'phone_number', 'whatsapp_number', 'quiet_hours', 'locale',
     ];
 
     protected function casts(): array
     {
         return [
-            'channel_database' => 'boolean',
-            'channel_mail' => 'boolean',
-            'channel_sms' => 'boolean',
+            'channel_database'  => 'boolean',
+            'channel_mail'      => 'boolean',
+            'channel_sms'       => 'boolean',
+            'channel_whatsapp'  => 'boolean',
+            'quiet_hours'       => 'array',
         ];
     }
 

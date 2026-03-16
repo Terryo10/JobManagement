@@ -17,7 +17,8 @@ class User extends Authenticatable implements FilamentUser
     use HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone_number', 'department_id', 'is_active',
+        'name', 'email', 'password', 'phone_number', 'whatsapp_number',
+        'notification_quiet_hours', 'department_id', 'is_active',
     ];
 
     protected $hidden = [
@@ -28,21 +29,22 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
+            'email_verified_at'          => 'datetime',
+            'password'                   => 'hashed',
+            'is_active'                  => 'boolean',
+            'notification_quiet_hours'   => 'array',
         ];
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
-            'admin' => $this->hasRole(['super_admin', 'manager']),
-            'staff' => $this->hasRole(['super_admin', 'manager', 'dept_head', 'staff']),
+            'admin'      => $this->hasRole(['super_admin', 'manager']),
+            'staff'      => $this->hasRole(['super_admin', 'manager', 'dept_head', 'staff']),
             'accountant' => $this->hasRole(['super_admin', 'accountant']),
-            'client' => $this->hasRole('client'),
-            'marketing' => $this->hasRole(['super_admin', 'manager', 'marketing']),
-            default => false,
+            'client'     => $this->hasRole('client'),
+            'marketing'  => $this->hasRole(['super_admin', 'manager', 'marketing']),
+            default      => false,
         };
     }
 
@@ -65,5 +67,17 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->belongsToMany(WorkOrder::class, 'work_order_collaborators')
             ->withPivot('role', 'added_at');
+    }
+
+    /** All per-type channel preferences for this user. */
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    /** Convenience: get the preference row for a specific event type. */
+    public function notificationPreferenceFor(string $type): ?NotificationPreference
+    {
+        return $this->notificationPreferences->firstWhere('notification_type', $type);
     }
 }
