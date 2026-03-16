@@ -56,7 +56,16 @@ class TasksRelationManager extends RelationManager
                 $data['created_by'] = auth()->id();
                 return $data;
             })])
-            ->actions([Tables\Actions\EditAction::make(), Tables\Actions\DeleteAction::make()])
+            ->actions([
+                Tables\Actions\Action::make('documents')
+                    ->label('Documents')
+                    ->icon('heroicon-o-paper-clip')
+                    ->color('gray')
+                    ->url(fn ($record) => \App\Filament\Admin\Resources\TaskResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 }

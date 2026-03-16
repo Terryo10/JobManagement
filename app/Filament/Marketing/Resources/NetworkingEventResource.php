@@ -55,8 +55,15 @@ class NetworkingEventResource extends Resource
                 'networking' => 'Networking Event', 'workshop' => 'Workshop',
             ]),
         ])
-        ->actions([Tables\Actions\EditAction::make(), Tables\Actions\ViewAction::make()])
+        ->actions([Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Marketing\Resources\NetworkingEventResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -64,6 +71,7 @@ class NetworkingEventResource extends Resource
         return [
             'index'  => Pages\ListNetworkingEvents::route('/'),
             'create' => Pages\CreateNetworkingEvent::route('/create'),
+            'view'   => Pages\ViewNetworkingEvent::route('/{record}'),
             'edit'   => Pages\EditNetworkingEvent::route('/{record}/edit'),
         ];
     }

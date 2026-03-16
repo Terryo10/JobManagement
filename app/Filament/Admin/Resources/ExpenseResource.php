@@ -44,13 +44,15 @@ class ExpenseResource extends Resource
             Tables\Columns\TextColumn::make('approval_status')->badge()->color(fn ($state) => match ($state) { 'pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger', default => 'gray' }),
         ])
         ->filters([Tables\Filters\SelectFilter::make('approval_status')->options(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'])])
-        ->actions([Tables\Actions\EditAction::make()])
+        ->actions([Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Admin\Resources\ExpenseResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -58,6 +60,7 @@ class ExpenseResource extends Resource
         return [
             'index'  => Pages\ListExpenses::route('/'),
             'create' => Pages\CreateExpense::route('/create'),
+            'view'   => Pages\ViewExpense::route('/{record}'),
             'edit'   => Pages\EditExpense::route('/{record}/edit'),
         ];
     }

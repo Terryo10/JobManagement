@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\ProposalResource\Pages;
+use App\Filament\Admin\Resources\ProposalResource\RelationManagers\DocumentsRelationManager;
 use App\Models\Proposal;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -116,6 +117,13 @@ class ProposalResource extends Resource
     public static function canCreate(): bool
     {
         return false;
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

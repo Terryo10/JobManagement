@@ -60,6 +60,21 @@ return [
             'report' => false,
         ],
 
+
+
+        'contabo' => [
+            'driver' => 's3',
+            'key' => env('CONTABO_ACCESS_KEY'),
+            'secret' => env('CONTABO_SECRET_KEY'),
+            'region' => env('CONTABO_REGION', 'default'),
+            'bucket' => env('CONTABO_BUCKET'),
+            'endpoint' => env('CONTABO_ENDPOINT'),
+            'url' => env('CONTABO_URL'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

@@ -66,13 +66,15 @@ class LeadResource extends Resource
             ]),
             Tables\Filters\TrashedFilter::make(),
         ])
-        ->actions([Tables\Actions\EditAction::make(), Tables\Actions\ViewAction::make()])
+        ->actions([Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Marketing\Resources\LeadResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -80,6 +82,7 @@ class LeadResource extends Resource
         return [
             'index'  => Pages\ListLeads::route('/'),
             'create' => Pages\CreateLead::route('/create'),
+            'view'   => Pages\ViewLead::route('/{record}'),
             'edit'   => Pages\EditLead::route('/{record}/edit'),
         ];
     }

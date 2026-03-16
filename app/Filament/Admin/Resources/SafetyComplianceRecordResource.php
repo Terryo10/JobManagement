@@ -39,13 +39,15 @@ class SafetyComplianceRecordResource extends Resource
             Tables\Columns\TextColumn::make('completed_at')->dateTime()->sortable(),
         ])
         ->filters([Tables\Filters\TernaryFilter::make('is_complete')])
-        ->actions([Tables\Actions\EditAction::make()])
+        ->actions([Tables\Actions\ViewAction::make(), Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Admin\Resources\SafetyComplianceRecordResource\RelationManagers\DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -53,6 +55,7 @@ class SafetyComplianceRecordResource extends Resource
         return [
             'index'  => Pages\ListSafetyComplianceRecords::route('/'),
             'create' => Pages\CreateSafetyComplianceRecord::route('/create'),
+            'view'   => Pages\ViewSafetyComplianceRecord::route('/{record}'),
             'edit'   => Pages\EditSafetyComplianceRecord::route('/{record}/edit'),
         ];
     }

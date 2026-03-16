@@ -33,6 +33,13 @@ return [
         'model'   => env('GEMINI_MODEL', 'gemini-2.0-flash'),
     ],
 
+    'infobip' => [
+        'base_url'          => env('INFOBIP_BASE_URL'),
+        'api_key'           => env('INFOBIP_API_KEY'),
+        'sms_sender'        => env('INFOBIP_SMS_SENDER', 'JobMgmt'),
+        'whatsapp_sender'   => env('INFOBIP_WHATSAPP_SENDER'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -165,6 +165,7 @@ class AllWorkOrdersResource extends Resource
         return [
             TasksRelationManager::class,
             CollaboratorsRelationManager::class,
+            \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }
 

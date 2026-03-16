@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class MarketResearch extends Model
 {
@@ -24,5 +25,10 @@ class MarketResearch extends Model
     public function researchedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'researched_by');
+    }
+
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(Document::class, 'documentable');
     }
 }
