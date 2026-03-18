@@ -3,6 +3,7 @@
 namespace App\Filament\Shared\Resources;
 
 use App\Models\PersonalFile;
+use App\Models\User;
 use App\Support\DocumentFileTypes;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -10,7 +11,9 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
+use Filament\Forms\Get;
 
 abstract class BasePersonalFileResource extends Resource
 {
@@ -41,9 +44,17 @@ abstract class BasePersonalFileResource extends Resource
                     ->columnSpanFull(),
 
                 Forms\Components\Toggle::make('is_shared')
-                    ->label('Share with organisation')
-                    ->helperText('When enabled, all team members can view and download this file.')
-                    ->default(false),
+                    ->label('Share with specific users')
+                    ->helperText('When enabled, you can select specific users to share this file with.')
+                    ->live(),
+
+                Forms\Components\Select::make('sharedWith')
+                    ->relationship('sharedWith', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
+                    ->hidden(fn (Get $get): bool => ! $get('is_shared'))
+                    ->columnSpanFull(),
 
                 Forms\Components\TagsInput::make('tags')
                     ->columnSpanFull(),
@@ -74,13 +85,7 @@ abstract class BasePersonalFileResource extends Resource
                     ->formatStateUsing(fn ($state) => self::formatBytes((int) $state))
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('is_shared')
-                    ->label('Sharing')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-globe-alt')
-                    ->falseIcon('heroicon-o-lock-closed')
-                    ->trueColor('success')
-                    ->falseColor('gray'),
+
 
                 Tables\Columns\TextColumn::make('owner.name')
                     ->label('Owner')
@@ -102,14 +107,6 @@ abstract class BasePersonalFileResource extends Resource
                         Storage::disk('contabo')->temporaryUrl($record->file_path, now()->addHour())
                     )
                     ->openUrlInNewTab(),
-
-                Tables\Actions\Action::make('toggle_share')
-                    ->label(fn (PersonalFile $record) => $record->is_shared ? 'Make Private' : 'Share')
-                    ->icon(fn (PersonalFile $record) => $record->is_shared ? 'heroicon-o-lock-closed' : 'heroicon-o-globe-alt')
-                    ->color(fn (PersonalFile $record) => $record->is_shared ? 'warning' : 'success')
-                    ->visible(fn (PersonalFile $record) => $record->user_id === auth()->id())
-                    ->requiresConfirmation()
-                    ->action(fn (PersonalFile $record) => $record->update(['is_shared' => ! $record->is_shared])),
 
                 Tables\Actions\EditAction::make()
                     ->visible(fn (PersonalFile $record) => $record->user_id === auth()->id()),
