@@ -15,6 +15,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Database\Eloquent\Builder;
 
 class AiInvoiceReportPage extends Page implements HasForms
 {
@@ -29,6 +30,7 @@ class AiInvoiceReportPage extends Page implements HasForms
     public ?array $data = [];
     public string $reportMarkdown = '';
     public bool $isEditing = false;
+    public ?int $selectedReportId = null;
 
     public function mount(): void
     {
@@ -36,14 +38,74 @@ class AiInvoiceReportPage extends Page implements HasForms
             'date_from' => now()->startOfMonth()->format('Y-m-d'),
             'date_to'   => now()->format('Y-m-d'),
         ]);
+
+        if ($this->selectedReportId) {
+            $this->loadReport();
+        }
+    }
+
+    public function getReportOptions(): array
+    {
+        return ReportLog::query()
+            ->where('report_type', 'ai_invoice_report')
+            ->where('generated_by', auth()->id())
+            ->where('status', 'completed')
+            ->orderByDesc('generated_at')
+            ->get()
+            ->mapWithKeys(function (ReportLog $report) {
+                $filters = $report->filters_used;
+                $dateRange = "{$filters['date_from']} to {$filters['date_to']}";
+                $status = !empty($filters['status_filter']) ? implode(', ', $filters['status_filter']) : 'All Statuses';
+                return [$report->id => "{$report->generated_at->format('d M Y H:i')} ({$dateRange}, {$status})"];
+            })
+            ->toArray();
+    }
+
+    public function isGeneratingNewReport(): bool
+    {
+        return $this->selectedReportId === null;
     }
 
     public function form(Form $form): Form
     {
         return $form
             ->schema([
-                DatePicker::make('date_from')->label('From')->native(false)->required(),
-                DatePicker::make('date_to')->label('To')->native(false)->required(),
+                Select::make('selectedReportId')
+                    ->label('Load Existing Report')
+                    ->options($this->getReportOptions())
+                    ->live()
+                    ->afterStateUpdated(function (?string $state) {
+                        $this->selectedReportId = (int) $state;
+                        $this->loadReport();
+                    })
+                    ->placeholder('Select a past report to view')
+                    ->searchable()
+                    ->columnSpanFull(),
+                Select::make('invoice_id')
+                    ->label('Specific Invoice')
+                    ->options(Invoice::query()
+                        ->with('client:id,company_name')
+                        ->latest('issued_at')
+                        ->get()
+                        ->mapWithKeys(fn (Invoice $record) => [
+                            $record->id => "{$record->invoice_number} — {$record->client?->company_name} ($" . number_format($record->total, 2) . ")"
+                        ])
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Search by invoice number...')
+                    ->hidden(fn () => !$this->isGeneratingNewReport())
+                    ->live(),
+                DatePicker::make('date_from')
+                    ->label('From')
+                    ->native(false)
+                    ->required(fn ($get) => empty($get('invoice_id')))
+                    ->hidden(fn ($get) => !$this->isGeneratingNewReport() || !empty($get('invoice_id'))),
+                DatePicker::make('date_to')
+                    ->label('To')
+                    ->native(false)
+                    ->required(fn ($get) => empty($get('invoice_id')))
+                    ->hidden(fn ($get) => !$this->isGeneratingNewReport() || !empty($get('invoice_id'))),
                 Select::make('status_filter')
                     ->label('Status (leave blank for all)')
                     ->options([
@@ -55,12 +117,14 @@ class AiInvoiceReportPage extends Page implements HasForms
                         'cancelled' => 'Cancelled',
                     ])
                     ->placeholder('All statuses')
-                    ->multiple(),
+                    ->multiple()
+                    ->hidden(fn ($get) => !$this->isGeneratingNewReport() || !empty($get('invoice_id'))),
                 Textarea::make('custom_instructions')
                     ->label('Custom Instructions')
                     ->placeholder('e.g. "Focus on overdue invoices", "Add currency breakdown", "Keep summary brief"')
                     ->rows(2)
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->hidden(fn () => !$this->isGeneratingNewReport() && $this->reportMarkdown), // Only show if generating new or revising existing
             ])
             ->columns(2)
             ->statePath('data');
@@ -71,37 +135,84 @@ class AiInvoiceReportPage extends Page implements HasForms
         $data = $this->form->getState();
 
         $query = Invoice::query()
-            ->with(['client:id,company_name', 'workOrder:id,reference_number'])
-            ->whereBetween('issued_at', [$data['date_from'], $data['date_to'] . ' 23:59:59']);
+            ->with(['client:id,company_name', 'workOrder:id,reference_number']);
 
-        if (!empty($data['status_filter'])) {
-            $query->whereIn('status', $data['status_filter']);
+        if (!empty($data['invoice_id'])) {
+            $query->where('id', $data['invoice_id']);
+        } else {
+            $query->whereBetween('issued_at', [$data['date_from'], $data['date_to'] . ' 23:59:59']);
+
+            if (!empty($data['status_filter'])) {
+                $query->whereIn('status', $data['status_filter']);
+            }
         }
 
         $invoices = $query->get();
 
         if ($invoices->isEmpty()) {
-            Notification::make()->title('No invoices found for the selected period.')->warning()->send();
+            Notification::make()->title('No invoices found for the selected criteria.')->warning()->send();
             return;
         }
 
         $service = new AiReportService();
-        $this->reportMarkdown = $service->generateInvoiceReport($invoices, $data['custom_instructions'] ?? '');
+        $generatedMarkdown = $service->generateInvoiceReport($invoices, $data['custom_instructions'] ?? '');
+        $this->reportMarkdown = $generatedMarkdown;
         $this->isEditing = false;
 
         ReportLog::create([
-            'report_type' => 'ai_invoice_report',
-            'generated_by' => auth()->id(),
-            'filters_used' => [
-                'date_from'     => $data['date_from'],
-                'date_to'       => $data['date_to'],
+            'report_type'    => 'ai_invoice_report',
+            'generated_by'   => auth()->id(),
+            'filters_used'   => [
+                'invoice_id'    => $data['invoice_id'] ?? null,
+                'date_from'     => $data['date_from'] ?? null,
+                'date_to'       => $data['date_to'] ?? null,
+                'status_filter' => $data['status_filter'] ?? [],
                 'invoice_count' => $invoices->count(),
             ],
-            'status'       => str_starts_with($this->reportMarkdown, '**Error') ? 'failed' : 'completed',
-            'generated_at' => now(),
+            'status'         => str_starts_with($generatedMarkdown, '**Error') ? 'failed' : 'completed',
+            'generated_at'   => now(),
+            'report_content' => $generatedMarkdown,
         ]);
 
         Notification::make()->title('Invoice report generated.')->success()->send();
+    }
+
+    public function loadReport(): void
+    {
+        if (!$this->selectedReportId) {
+            $this->clearReport();
+            return;
+        }
+
+        $report = ReportLog::find($this->selectedReportId);
+
+        if ($report && $report->report_content) {
+            $this->reportMarkdown = $report->report_content;
+            $this->form->fill([
+                'date_from' => $report->filters_used['date_from'] ?? null,
+                'date_to'   => $report->filters_used['date_to'] ?? null,
+                'status_filter' => $report->filters_used['status_filter'] ?? [],
+                'custom_instructions' => null, // Clear instructions for loaded reports
+            ]);
+            Notification::make()->title('Report loaded successfully.')->success()->send();
+        } else {
+            $this->clearReport();
+            Notification::make()->title('Selected report not found or content is empty.')->danger()->send();
+        }
+    }
+
+    public function clearReport(): void
+    {
+        $this->selectedReportId = null;
+        $this->reportMarkdown = '';
+        $this->isEditing = false;
+        $this->form->fill([
+            'date_from' => now()->startOfMonth()->format('Y-m-d'),
+            'date_to'   => now()->format('Y-m-d'),
+            'status_filter' => [],
+            'custom_instructions' => '',
+        ]);
+        Notification::make()->title('Report cleared.')->success()->send();
     }
 
     public function revise(): void
@@ -120,6 +231,15 @@ class AiInvoiceReportPage extends Page implements HasForms
         }
 
         $this->reportMarkdown = (new AiReportService())->reviseReport($this->reportMarkdown, $instructions);
+        
+        // If it was a loaded report, update its content in the database
+        if ($this->selectedReportId) {
+            $report = ReportLog::find($this->selectedReportId);
+            if ($report) {
+                $report->update(['report_content' => $this->reportMarkdown]);
+            }
+        }
+
         Notification::make()->title('Report revised.')->success()->send();
     }
 
@@ -131,6 +251,24 @@ class AiInvoiceReportPage extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('clearReport')
+                ->label('Clear Report')
+                ->icon('heroicon-o-backspace')
+                ->color('secondary')
+                ->visible(fn () => !empty($this->reportMarkdown))
+                ->action('clearReport'),
+            Action::make('generateReport')
+                ->label('Generate New Report')
+                ->icon('heroicon-o-arrow-path')
+                ->color('primary')
+                ->visible(fn () => $this->isGeneratingNewReport())
+                ->action('generate'),
+            Action::make('reviseReport')
+                ->label('Revise Report')
+                ->icon('heroicon-o-pencil')
+                ->color('info')
+                ->visible(fn () => !empty($this->reportMarkdown) && $this->isGeneratingNewReport() === false)
+                ->action('revise'),
             Action::make('downloadPdf')
                 ->label('Download PDF')
                 ->icon('heroicon-o-arrow-down-tray')

@@ -10,6 +10,7 @@ class ReportLog extends Model
     protected $fillable = [
         'scheduled_report_id', 'report_type', 'generated_by',
         'filters_used', 'file_path', 'status', 'error_message', 'generated_at',
+        'report_content',
     ];
 
     protected function casts(): array
