@@ -73,20 +73,15 @@
             &nbsp;&nbsp;&nbsp;&nbsp; Eastlea, Harare<br>
             <span class="icon">✉</span> sales@householdmedia.co.zw
         </div>
-        <div class="header-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" width="90">
-                <rect x="10" y="5" width="16" height="55" fill="#cc0000"/>
-                <rect x="36" y="5" width="16" height="35" fill="#cc0000"/>
-                <rect x="36" y="28" width="40" height="12" fill="#cc0000"/>
-                <rect x="62" y="5" width="16" height="55" fill="#cc0000"/>
-                <rect x="88" y="5" width="16" height="55" fill="#cc0000"/>
-                <text x="5" y="85" font-family="Arial Black, Arial" font-size="28" font-weight="900" fill="#000">HOUSEHOLD</text>
-                <rect x="10" y="100" width="16" height="55" fill="#cc0000"/>
-                <rect x="36" y="100" width="16" height="55" fill="#cc0000"/>
-                <rect x="36" y="115" width="40" height="12" fill="#cc0000"/>
-                <rect x="62" y="120" width="16" height="35" fill="#cc0000"/>
-                <rect x="88" y="100" width="16" height="55" fill="#cc0000"/>
-            </svg>
+        <div class="header-center logo-block">
+            @if(file_exists(public_path('images/logo.png')))
+                <img src="{{ public_path('images/logo.png') }}" alt="Household Brands" style="max-width: 120px; height: auto;">
+            @elseif(file_exists(public_path('images/logo.jpg')))
+                <img src="{{ public_path('images/logo.jpg') }}" alt="Household Brands" style="max-width: 120px; height: auto;">
+            @else
+                <!-- Fallback until logo is uploaded to public/images/logo.png -->
+                <div style="font-family: 'Arial Black', Arial, sans-serif; font-size: 26px; font-weight: 900; color: #000; padding: 20px 0;">HOUSEHOLD</div>
+            @endif
         </div>
         <div class="header-right">
             <span class="icon">📞</span> +263 242 747 069-70<br>

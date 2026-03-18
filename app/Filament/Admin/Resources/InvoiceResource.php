@@ -98,15 +98,18 @@ class InvoiceResource extends Resource
             Tables\Actions\ViewAction::make(),
             Tables\Actions\EditAction::make(),
             Tables\Actions\Action::make('send')
-                ->label('Send to Client')
+                ->label('Email Invoice')
                 ->icon('heroicon-o-paper-airplane')
                 ->color('info')
-                ->requiresConfirmation()
-                ->action(function ($record) {
-                    if (!$record->client || !$record->client->email) {
-                        \Filament\Notifications\Notification::make()->title('Client has no email attached.')->danger()->send();
-                        return;
-                    }
+                ->form([
+                    Forms\Components\TextInput::make('email')
+                        ->label('Recipient Email')
+                        ->email()
+                        ->required()
+                        ->default(fn ($record) => $record->client?->email),
+                ])
+                ->action(function ($record, array $data) {
+                    $email = $data['email'];
 
                     $record->update([
                         'status' => 'sent',
@@ -114,7 +117,7 @@ class InvoiceResource extends Resource
                     ]);
                     
                     // Dispatch the email with the signed URL
-                    Mail::to($record->client->email)->send(new InvoiceSentToClient($record));
+                    Mail::to($email)->send(new InvoiceSentToClient($record));
 
                     // Notify the client user in the dashboard if they exist
                     $clientUser = \App\Models\User::where('email', $record->client?->email)->first();
@@ -136,7 +139,7 @@ class InvoiceResource extends Resource
                             ->sendToDatabase($clientUser);
                     }
                     
-                    \Filament\Notifications\Notification::make()->title('Invoice sent to client.')->success()->send();
+                    \Filament\Notifications\Notification::make()->title('Invoice emailed successfully.')->success()->send();
                 }),
             Tables\Actions\Action::make('markPaid')
                 ->icon('heroicon-o-check-badge')

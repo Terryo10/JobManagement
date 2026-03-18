@@ -32,6 +32,7 @@ class MarketingPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make('Dashboard')->icon('heroicon-o-home'),
                 NavigationGroup::make('Pipeline')->icon('heroicon-o-funnel'),
+                NavigationGroup::make('Operations')->icon('heroicon-o-clipboard-document-list'),
                 NavigationGroup::make('Clients')->icon('heroicon-o-user-group'),
                 NavigationGroup::make('Strategy')->icon('heroicon-o-light-bulb'),
                 NavigationGroup::make('Reports')->icon('heroicon-o-document-chart-bar'),

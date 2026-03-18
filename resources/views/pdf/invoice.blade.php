@@ -75,19 +75,14 @@
             <div class="header-left">
                 <div class="company-name">Household Brands (Pvt) Ltd</div>
                 <div class="logo-block">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" width="120">
-                        <rect x="10" y="5" width="16" height="55" fill="#cc0000"/>
-                        <rect x="36" y="5" width="16" height="35" fill="#cc0000"/>
-                        <rect x="36" y="28" width="40" height="12" fill="#cc0000"/>
-                        <rect x="62" y="5" width="16" height="55" fill="#cc0000"/>
-                        <rect x="88" y="5" width="16" height="55" fill="#cc0000"/>
-                        <text x="5" y="85" font-family="Arial Black, Arial" font-size="28" font-weight="900" fill="#000">HOUSEHOLD</text>
-                        <rect x="10" y="100" width="16" height="55" fill="#cc0000"/>
-                        <rect x="36" y="100" width="16" height="55" fill="#cc0000"/>
-                        <rect x="36" y="115" width="40" height="12" fill="#cc0000"/>
-                        <rect x="62" y="120" width="16" height="35" fill="#cc0000"/>
-                        <rect x="88" y="100" width="16" height="55" fill="#cc0000"/>
-                    </svg>
+                    @if(file_exists(public_path('images/logo.png')))
+                        <img src="{{ public_path('images/logo.png') }}" alt="Household Brands" style="max-width: 150px; height: auto;">
+                    @elseif(file_exists(public_path('images/logo.jpg')))
+                        <img src="{{ public_path('images/logo.jpg') }}" alt="Household Brands" style="max-width: 150px; height: auto;">
+                    @else
+                        <!-- Fallback until logo is uploaded to public/images/logo.png -->
+                        <div style="font-family: 'Arial Black', Arial, sans-serif; font-size: 26px; font-weight: 900; color: #000; padding: 20px 0;">HOUSEHOLD</div>
+                    @endif
                 </div>
             </div>
             <div class="header-right">

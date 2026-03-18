@@ -53,4 +53,10 @@ class PersonalFile extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function sharedWith(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'personal_file_shares', 'personal_file_id', 'user_id');
+    }
+
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Staff\Resources\PersonalFileResource\Pages;
+namespace App\Filament\Marketing\Resources\PersonalFileResource\Pages;
 
-use App\Filament\Staff\Resources\PersonalFileResource;
+use App\Filament\Marketing\Resources\PersonalFileResource;
 use App\Models\PersonalFile;
 use Filament\Actions;
 use Filament\Resources\Components\Tab;

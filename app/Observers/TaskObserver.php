@@ -32,20 +32,37 @@ class TaskObserver
     {
         $router = app(NotificationRouter::class);
 
-        // Task released
+        // Task released / unassigned
         if ($task->isDirty('claimed_by') && ! $task->claimed_by && $task->getOriginal('claimed_by')) {
-            $releasedBy = User::find($task->getOriginal('claimed_by'));
+            $oldClaimedByUserId = $task->getOriginal('claimed_by');
+            $oldClaimedBy = User::find($oldClaimedByUserId);
+            $isSelfRelease = auth()->check() && auth()->id() === (int) $oldClaimedByUserId;
 
-            $router->dispatch(new NotificationEvent(
-                type:           'task.released',
-                title:          'Task Released',
-                body:           "Task \"{$task->title}\" was released by {$releasedBy?->name}",
-                icon:           'heroicon-o-arrow-uturn-left',
-                color:          'warning',
-                recipientRoles: ['manager', 'super_admin'],
-                subjectType:    Task::class,
-                subjectId:      $task->id,
-            ));
+            if ($isSelfRelease) {
+                $router->dispatch(new NotificationEvent(
+                    type:           'task.released',
+                    title:          'Task Released',
+                    body:           "Task \"{$task->title}\" was released by {$oldClaimedBy?->name}",
+                    icon:           'heroicon-o-arrow-uturn-left',
+                    color:          'warning',
+                    recipientRoles: ['manager', 'super_admin'],
+                    subjectType:    Task::class,
+                    subjectId:      $task->id,
+                ));
+            } else {
+                $reasonText = $task->unassignmentReason ? "\nReason: {$task->unassignmentReason}" : "";
+                $router->dispatch(new NotificationEvent(
+                    type:             'task.unassigned',
+                    title:            'Task Unassigned',
+                    body:             "You have been unassigned from: {$task->title}{$reasonText}",
+                    icon:             'heroicon-o-user-minus',
+                    color:            'danger',
+                    recipientUserIds: [$oldClaimedByUserId],
+                    subjectType:      Task::class,
+                    subjectId:        $task->id,
+                    priority:         'high',
+                ));
+            }
         }
 
         // Task claimed / assigned

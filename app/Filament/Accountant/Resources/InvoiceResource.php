@@ -112,16 +112,20 @@ class InvoiceResource extends Resource
                     Notification::make()->title('Invoice marked as paid.')->success()->send();
                 }),
             Tables\Actions\Action::make('sendToClient')
-                ->label('Send to Client')
+                ->label('Email Invoice')
                 ->icon('heroicon-o-paper-airplane')
-                ->requiresConfirmation()
-                ->action(function ($record) {
-                    if (!$record->client || !$record->client->email) {
-                        Notification::make()->title('Client has no email attached.')->danger()->send();
-                        return;
-                    }
+                ->color('info')
+                ->form([
+                    Forms\Components\TextInput::make('email')
+                        ->label('Recipient Email')
+                        ->email()
+                        ->required()
+                        ->default(fn ($record) => $record->client?->email),
+                ])
+                ->action(function ($record, array $data) {
+                    $email = $data['email'];
                     $record->update(['status' => 'sent']);
-                    Mail::to($record->client->email)->send(new InvoiceSentToClient($record));
+                    Mail::to($email)->send(new InvoiceSentToClient($record));
                     
                     // Notify the client user in the dashboard if they exist
                     $clientUser = \App\Models\User::where('email', $record->client?->email)->first();
@@ -143,7 +147,7 @@ class InvoiceResource extends Resource
                             ->sendToDatabase($clientUser);
                     }
 
-                    Notification::make()->title('Invoice sent to client.')->success()->send();
+                    Notification::make()->title('Invoice emailed successfully.')->success()->send();
                 }),
             Tables\Actions\Action::make('downloadPdf')
                 ->label('Download PDF')

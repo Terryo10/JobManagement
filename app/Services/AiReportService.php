@@ -173,6 +173,8 @@ PROMPT;
         $systemPrompt = <<<PROMPT
 You are a financial analyst for Household Media. Generate a professional Markdown invoice/revenue report from the data below.
 
+DO NOT include a report title, generation date, or any disclaimers like "Calculations for overdue are based on this date". Just provide the report body directly starting with the Summary.
+
 Include:
 1. **Summary** – total invoiced, collected, outstanding, overdue
 2. **Invoice Breakdown** – table with key columns

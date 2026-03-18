@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Admin\Resources;
+namespace App\Filament\Marketing\Resources;
 
-use App\Filament\Admin\Resources\TaskResource\Pages;
-use App\Filament\Admin\Resources\TaskResource\RelationManagers;
+use App\Filament\Marketing\Resources\TaskResource\Pages;
+use App\Filament\Marketing\Resources\TaskResource\RelationManagers;
 use App\Models\Task;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -146,7 +146,6 @@ class TaskResource extends Resource
             RelationManagers\SubtasksRelationManager::class,
             RelationManagers\CommentsRelationManager::class,
             RelationManagers\TimeLogsRelationManager::class,
-            RelationManagers\DocumentsRelationManager::class,
         ];
     }
 
