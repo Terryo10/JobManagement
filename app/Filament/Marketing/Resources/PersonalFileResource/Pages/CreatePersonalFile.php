@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Client\Resources\PersonalFileResource\Pages;
+namespace App\Filament\Marketing\Resources\PersonalFileResource\Pages;
 
-use App\Filament\Client\Resources\PersonalFileResource;
+use App\Filament\Marketing\Resources\PersonalFileResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreatePersonalFile extends CreateRecord
