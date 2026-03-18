@@ -68,6 +68,16 @@
     <div class="header">
         <div class="header-top">
             <div class="header-left">
+                <div class="logo-block" style="margin-bottom: 10px;">
+                    @if(file_exists(public_path('images/logo.png')))
+                        <img src="{{ public_path('images/logo.png') }}" alt="Household Brands" style="max-width: 120px; height: auto;">
+                    @elseif(file_exists(public_path('images/logo.jpg')))
+                        <img src="{{ public_path('images/logo.jpg') }}" alt="Household Brands" style="max-width: 120px; height: auto;">
+                    @else
+                        <!-- Fallback until logo is uploaded to public/images/logo.png -->
+                        <div style="font-family: 'Arial Black', Arial, sans-serif; font-size: 26px; font-weight: 900; color: #000; padding: 20px 0;">HOUSEHOLD</div>
+                    @endif
+                </div>
                 <div class="company-name">{{ config('app.name', 'Job Management') }}</div>
                 <div class="company-sub">Job Card Document</div>
             </div>

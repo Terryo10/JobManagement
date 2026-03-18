@@ -49,7 +49,46 @@ class SubtasksRelationManager extends RelationManager
                 $data['created_by'] = auth()->id();
                 return $data;
             })])
-            ->actions([Tables\Actions\EditAction::make(), Tables\Actions\DeleteAction::make()])
+            ->actions([
+                Tables\Actions\Action::make('reassign')
+                    ->label('Reassign')
+                    ->icon('heroicon-o-user-plus')
+                    ->color('warning')
+                    ->form([
+                        Forms\Components\Select::make('user_id')
+                            ->label('Assign to')
+                            ->relationship('claimedBy', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $record->update([
+                            'claimed_by' => $data['user_id'],
+                            'claimed_at' => now(),
+                            'assigned_to' => $data['user_id'],
+                            'status' => 'in_progress',
+                        ]);
+                        \Filament\Notifications\Notification::make()->title('Task reassigned.')->success()->send();
+                    }),
+                Tables\Actions\Action::make('unassign')
+                    ->label('Unassign')
+                    ->icon('heroicon-o-user-minus')
+                    ->color('danger')
+                    ->form([
+                        Forms\Components\Textarea::make('reason')
+                            ->label('Reason for unassignment')
+                            ->placeholder('Optional reason...'),
+                    ])
+                    ->visible(fn ($record) => $record->claimed_by !== null)
+                    ->action(function ($record, array $data) {
+                        $record->unassignmentReason = $data['reason'] ?? null;
+                        $record->release();
+                        \Filament\Notifications\Notification::make()->title('Task unassigned and returned to queue.')->success()->send();
+                    }),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+            ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 }

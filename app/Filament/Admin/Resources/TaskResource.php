@@ -105,9 +105,14 @@ class TaskResource extends Resource
                 ->label('Unassign')
                 ->icon('heroicon-o-user-minus')
                 ->color('danger')
-                ->requiresConfirmation()
+                ->form([
+                    Forms\Components\Textarea::make('reason')
+                        ->label('Reason for unassignment')
+                        ->placeholder('Optional reason...'),
+                ])
                 ->visible(fn ($record) => $record->claimed_by !== null)
-                ->action(function ($record) {
+                ->action(function ($record, array $data) {
+                    $record->unassignmentReason = $data['reason'] ?? null;
                     $record->release();
                     \Filament\Notifications\Notification::make()->title('Task unassigned and returned to queue.')->success()->send();
                 }),

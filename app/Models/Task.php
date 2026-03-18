@@ -13,6 +13,8 @@ class Task extends Model
 {
     use SoftDeletes;
 
+    public ?string $unassignmentReason = null;
+
     protected static function booted(): void
     {
         static::creating(function (Task $task) {
