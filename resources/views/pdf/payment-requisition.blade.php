@@ -92,8 +92,8 @@
 
     {{-- ── Form Fields ── --}}
     <div class="form-row">
-        <div class="form-label">Name of Payee</div>
-        <div class="form-value">{{ $purchaseOrder->supplier?->name ?? '—' }}</div>
+        <div class="form-label">Purpose</div>
+        <div class="form-value">{{ $purchaseOrder->title ?? '—' }}</div>
     </div>
     <div class="form-row">
         <div class="form-label">Amount</div>
@@ -108,55 +108,31 @@
         <div class="form-value">PETTY CASH USD / BANK TRANSFER</div>
     </div>
     <div class="form-row">
-        <div class="form-label">PO Reference</div>
+        <div class="form-label">Reference No.</div>
         <div class="form-value">{{ $purchaseOrder->reference_number }}</div>
     </div>
 
-    {{-- ── Details of Payment (Items) ── --}}
+    {{-- ── Details of Payment ── --}}
     <div class="section-label">Details of Payment:</div>
-    @if($purchaseOrder->items && $purchaseOrder->items->count() > 0)
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th style="width: 8%;">#</th>
-                <th style="width: 52%;">Description</th>
-                <th style="width: 12%;" class="text-right">Qty</th>
-                <th style="width: 14%;" class="text-right">Unit Price</th>
-                <th style="width: 14%;" class="text-right">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($purchaseOrder->items as $i => $item)
-            <tr>
-                <td>{{ $i + 1 }}</td>
-                <td>{{ $item->material?->name ?? '—' }}</td>
-                <td class="text-right">{{ (int)$item->quantity }}</td>
-                <td class="text-right">{{ number_format($item->unit_price, 2) }}</td>
-                <td class="text-right">{{ number_format($item->total_price, 2) }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-    <div class="totals">
-        <div class="total-row grand">
-            <div class="total-label">TOTAL</div>
-            <div class="total-value">${{ number_format($purchaseOrder->total_amount, 2) }}</div>
-        </div>
+    <div class="form-row">
+        <div class="form-label">Description</div>
+        <div class="form-value">{{ $purchaseOrder->title ?? '—' }}</div>
     </div>
-    @else
-    <div class="detail-lines">
-        <div class="detail-line"></div>
-        <div class="detail-line"></div>
-        <div class="detail-line"></div>
-    </div>
-    @endif
-
     @if($purchaseOrder->notes)
     <div class="form-row">
         <div class="form-label">Notes</div>
         <div class="form-value">{{ $purchaseOrder->notes }}</div>
     </div>
     @endif
+    <div class="totals">
+        <div class="total-row grand">
+            <div class="total-label">AMOUNT REQUESTED</div>
+            <div class="total-value">${{ number_format($purchaseOrder->total_amount, 2) }}</div>
+        </div>
+    </div>
+
+
+
 
     {{-- ── Signatures ── --}}
     <div class="signature-block">

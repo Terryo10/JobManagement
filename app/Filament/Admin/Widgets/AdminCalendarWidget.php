@@ -134,6 +134,32 @@ class AdminCalendarWidget extends FullCalendarWidget
             ];
         });
 
+        // --- Requisitions (Purchase Orders) ---
+        \App\Models\PurchaseOrder::whereIn('status', ['finance_approved', 'approved'])
+            ->where('created_at', '>=', $info['start'])
+            ->where('created_at', '<=', $info['end'])
+            ->with(['orderedBy'])
+            ->get()
+            ->each(function ($po) use (&$events) {
+                $statusLabel = $po->status === 'finance_approved' ? ' (Pending Final Approval)' : ' (Approved)';
+                $color = $po->status === 'finance_approved' ? '#f59e0b' : '#22c55e'; // Orange vs Green
+                
+                $events[] = [
+                    'id'              => 'po-' . $po->id,
+                    'title'           => '📝 REQ: ' . $po->title . $statusLabel,
+                    'start'           => $po->created_at->toDateString(),
+                    'allDay'          => true,
+                    'backgroundColor' => $color,
+                    'borderColor'     => $color,
+                    'textColor'       => '#ffffff',
+                    'url'             => '/admin/purchase-orders/' . $po->id . '/edit',
+                    'extendedProps'   => [
+                        'type'   => 'requisition',
+                        'status' => $po->status,
+                    ],
+                ];
+            });
+
         return $events;
     }
 

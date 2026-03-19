@@ -48,24 +48,76 @@ class InvoiceResource extends Resource
                         ->relationship('workOrder', 'reference_number')->searchable()->preload()
                         ->helperText('Link to a specific job card'),
                     Forms\Components\Select::make('status')
-                        ->options(['draft' => 'Draft', 'sent' => 'Sent', 'paid' => 'Paid', 'signed' => 'Signed', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled'])
+                        ->options([
+                            'draft' => 'Draft',
+                            'pending_accountant' => 'Pending Accountant',
+                            'pending_admin' => 'Pending Admin',
+                            'approved' => 'Approved',
+                            'sent' => 'Sent',
+                            'paid' => 'Paid',
+                            'signed' => 'Signed',
+                            'overdue' => 'Overdue',
+                            'cancelled' => 'Cancelled',
+                        ])
                         ->default('draft')->required(),
                     Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
                     Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
                 ])->columns(2),
+                Forms\Components\Tabs\Tab::make('Line Items')->icon('heroicon-o-list-bullet')->schema([
+                    Forms\Components\Repeater::make('items')
+                        ->relationship()
+                        ->schema([
+                            Forms\Components\TextInput::make('description')->required()->maxLength(255),
+                            Forms\Components\TextInput::make('quantity')
+                                ->numeric()->default(1)->required()->live(onBlur: true)
+                                ->afterStateUpdated(function (\Filament\Forms\Get $get, \Filament\Forms\Set $set) {
+                                    $items = $get('../../items') ?? [];
+                                    $subtotal = collect($items)->reduce(fn ($carry, $item) => $carry + ((float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0)), 0);
+                                    $set('../../subtotal', number_format($subtotal, 2, '.', ''));
+                                    $taxRate = (float) ($get('../../tax_rate') ?? 0);
+                                    $taxAmount = $subtotal * ($taxRate / 100);
+                                    $set('../../tax_amount', number_format($taxAmount, 2, '.', ''));
+                                    $set('../../total', number_format($subtotal + $taxAmount, 2, '.', ''));
+                                }),
+                            Forms\Components\TextInput::make('unit')->maxLength(255),
+                            Forms\Components\TextInput::make('unit_price')
+                                ->numeric()->required()->live(onBlur: true)
+                                ->afterStateUpdated(function (\Filament\Forms\Get $get, \Filament\Forms\Set $set) {
+                                    $items = $get('../../items') ?? [];
+                                    $subtotal = collect($items)->reduce(fn ($carry, $item) => $carry + ((float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0)), 0);
+                                    $set('../../subtotal', number_format($subtotal, 2, '.', ''));
+                                    $taxRate = (float) ($get('../../tax_rate') ?? 0);
+                                    $taxAmount = $subtotal * ($taxRate / 100);
+                                    $set('../../tax_amount', number_format($taxAmount, 2, '.', ''));
+                                    $set('../../total', number_format($subtotal + $taxAmount, 2, '.', ''));
+                                }),
+                        ])
+                        ->columns(4)->live(onBlur: true)
+                        ->afterStateUpdated(function (\Filament\Forms\Get $get, \Filament\Forms\Set $set) {
+                            $items = $get('items') ?? [];
+                            $subtotal = collect($items)->reduce(fn ($carry, $item) => $carry + ((float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0)), 0);
+                            $set('subtotal', number_format($subtotal, 2, '.', ''));
+                            $taxRate = (float) ($get('tax_rate') ?? 0);
+                            $taxAmount = $subtotal * ($taxRate / 100);
+                            $set('tax_amount', number_format($taxAmount, 2, '.', ''));
+                            $set('total', number_format($subtotal + $taxAmount, 2, '.', ''));
+                        })->addActionLabel('Add Line Item'),
+                ]),
                 Forms\Components\Tabs\Tab::make('Financials')->icon('heroicon-o-calculator')->schema([
-                    Forms\Components\TextInput::make('subtotal')->numeric()->prefix('$')->default(0)->disabled()->dehydrated(),
+                    Forms\Components\TextInput::make('subtotal')->numeric()->prefix('$')->default(0)->readOnly(),
                     Forms\Components\TextInput::make('tax_rate')->numeric()->suffix('%')->default(0)
-                        ->reactive()
+                        ->live(onBlur: true)
                         ->afterStateUpdated(function (\Filament\Forms\Set $set, \Filament\Forms\Get $get) {
-                            $subtotal = (float) ($get('subtotal') ?: 0);
+                            $items = $get('items') ?? [];
+                            $subtotal = collect($items)->reduce(fn ($carry, $item) => $carry + ((float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0)), 0);
+                            $set('subtotal', number_format($subtotal, 2, '.', ''));
                             $taxRate = (float) ($get('tax_rate') ?: 0);
-                            $taxAmount = round($subtotal * ($taxRate / 100), 2);
-                            $set('tax_amount', $taxAmount);
-                            $set('total', $subtotal + $taxAmount);
+                            $taxAmount = $subtotal * ($taxRate / 100);
+                            $set('tax_amount', number_format($taxAmount, 2, '.', ''));
+                            $set('total', number_format($subtotal + $taxAmount, 2, '.', ''));
                         }),
-                    Forms\Components\TextInput::make('tax_amount')->numeric()->prefix('$')->default(0)->disabled()->dehydrated(),
-                    Forms\Components\TextInput::make('total')->numeric()->prefix('$')->default(0)->disabled()->dehydrated(),
+                    Forms\Components\TextInput::make('tax_amount')->numeric()->prefix('$')->default(0)->readOnly(),
+                    Forms\Components\TextInput::make('total')->numeric()->prefix('$')->default(0)->readOnly(),
                 ])->columns(2),
                 Forms\Components\Tabs\Tab::make('Dates & Payment')->icon('heroicon-o-calendar')->schema([
                     Forms\Components\DatePicker::make('issued_at')->label('Issue Date'),
@@ -85,7 +137,8 @@ class InvoiceResource extends Resource
             Tables\Columns\TextColumn::make('client.company_name')->label('Client')->sortable()->limit(25),
             Tables\Columns\TextColumn::make('workOrder.reference_number')->label('Job Card')->placeholder('—'),
             Tables\Columns\TextColumn::make('status')->badge()->color(fn ($state) => match ($state) {
-                'draft' => 'gray', 'sent' => 'info', 'signed' => 'success', 'paid' => 'success',
+                'draft' => 'gray', 'pending_accountant' => 'warning', 'pending_admin' => 'warning', 'approved' => 'success',
+                'sent' => 'info', 'signed' => 'success', 'paid' => 'success',
                 'overdue' => 'danger', 'cancelled' => 'gray', default => 'gray',
             }),
             Tables\Columns\TextColumn::make('total')->money('USD')->sortable(),
@@ -95,12 +148,22 @@ class InvoiceResource extends Resource
         ])
         ->filters([
             Tables\Filters\SelectFilter::make('status')->options([
-                'draft' => 'Draft', 'sent' => 'Sent', 'signed' => 'Signed', 'paid' => 'Paid', 'overdue' => 'Overdue',
+                'draft' => 'Draft', 'pending_accountant' => 'Pending Accountant', 'pending_admin' => 'Pending Admin', 'approved' => 'Approved', 'sent' => 'Sent', 'signed' => 'Signed', 'paid' => 'Paid', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled',
             ]),
         ])
         ->actions([
             Tables\Actions\ViewAction::make(),
             Tables\Actions\EditAction::make()->label('Update Payment'),
+            Tables\Actions\Action::make('approveAccountant')
+                ->label('Approve (Send to Admin)')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->visible(fn ($record) => in_array($record->status, ['draft', 'pending_accountant']))
+                ->action(function ($record) {
+                    $record->update(['status' => 'pending_admin']);
+                    Notification::make()->title('Invoice approved and sent to Admin.')->success()->send();
+                }),
             Tables\Actions\Action::make('markPaid')
                 ->label('Mark Paid')
                 ->icon('heroicon-o-check-badge')
@@ -115,6 +178,7 @@ class InvoiceResource extends Resource
                 ->label('Email Invoice')
                 ->icon('heroicon-o-paper-airplane')
                 ->color('info')
+                ->visible(fn ($record) => in_array($record->status, ['approved', 'sent', 'signed', 'overdue']))
                 ->form([
                     Forms\Components\TextInput::make('email')
                         ->label('Recipient Email')

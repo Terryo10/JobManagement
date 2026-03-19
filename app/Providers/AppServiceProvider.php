@@ -2,13 +2,11 @@
 
 namespace App\Providers;
 
-use App\Models\Expense;
 use App\Models\StaffAvailability;
 use App\Models\StockLevel;
 use App\Models\Task;
 use App\Models\WorkOrder;
 use App\Notifications\Channels\FilamentDatabaseChannel;
-use App\Observers\ExpenseObserver;
 use App\Observers\StaffAvailabilityObserver;
 use App\Observers\StockLevelObserver;
 use App\Observers\TaskObserver;
@@ -34,7 +32,6 @@ class AppServiceProvider extends ServiceProvider
     {
         WorkOrder::observe(WorkOrderObserver::class);
         Task::observe(TaskObserver::class);
-        Expense::observe(ExpenseObserver::class);
         StaffAvailability::observe(StaffAvailabilityObserver::class);
         StockLevel::observe(StockLevelObserver::class);
     }

@@ -10,16 +10,17 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class PurchaseOrder extends Model
 {
     protected $fillable = [
-        'reference_number', 'supplier_id', 'status', 'ordered_by',
-        'approved_by', 'total_amount', 'expected_delivery', 'delivered_at', 'notes',
+        'title', 'reference_number', 'status', 'ordered_by',
+        'approved_by', 'finance_approved_by', 'total_amount',
+        'expected_delivery', 'delivered_at', 'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'expected_delivery' => 'date',
-            'delivered_at' => 'datetime',
-            'total_amount' => 'decimal:2',
+            'delivered_at'      => 'datetime',
+            'total_amount'      => 'decimal:2',
         ];
     }
 
@@ -36,6 +37,11 @@ class PurchaseOrder extends Model
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function financeApprovedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'finance_approved_by');
     }
 
     public function items(): HasMany

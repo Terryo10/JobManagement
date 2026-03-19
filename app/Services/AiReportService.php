@@ -96,7 +96,7 @@ PROMPT;
             return [];
         }
 
-        $workOrder->load('tasks', 'expenses');
+        $workOrder->load('tasks');
 
         $tasks = $workOrder->tasks->map(fn ($t) => [
             'title'            => $t->title,
@@ -105,17 +105,10 @@ PROMPT;
             'status'           => $t->status,
         ])->toArray();
 
-        $expenses = $workOrder->expenses->map(fn ($e) => [
-            'category'    => $e->category,
-            'amount'      => (float) $e->amount,
-            'description' => $e->description,
-        ])->toArray();
-
         $woRef      = $workOrder->reference_number;
         $woTitle    = $workOrder->title;
         $woCategory = $workOrder->category;
         $tasksJson    = json_encode($tasks, JSON_PRETTY_PRINT);
-        $expensesJson = json_encode($expenses, JSON_PRETTY_PRINT);
 
         $prompt = <<<PROMPT
 You are a billing assistant. Based on the following work order data, suggest invoice line items.
@@ -125,9 +118,6 @@ Category: {$woCategory}
 
 Tasks:
 {$tasksJson}
-
-Expenses:
-{$expensesJson}
 
 Return ONLY a valid JSON array of line items. Each item must have:
 - "description" (string)

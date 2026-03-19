@@ -135,11 +135,6 @@ class WorkOrder extends Model
         return $this->hasMany(SafetyComplianceRecord::class);
     }
 
-    public function expenses(): HasMany
-    {
-        return $this->hasMany(Expense::class);
-    }
-
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
