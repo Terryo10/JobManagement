@@ -112,19 +112,14 @@ class AnnouncementResource extends Resource
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
-            Infolists\Components\Split::make([
-                Infolists\Components\Section::make()->schema([
-                    Infolists\Components\TextEntry::make('title')
-                        ->hiddenLabel()
-                        ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
-                        ->weight(FontWeight::Bold),
-                    Infolists\Components\TextEntry::make('body')
-                        ->hiddenLabel()
-                        ->html()
-                        ->columnSpanFull()
-                        ->prose(),
-                ])->grow(),
-                Infolists\Components\Section::make()->schema([
+            Infolists\Components\Section::make()->schema([
+                Infolists\Components\TextEntry::make('title')
+                    ->hiddenLabel()
+                    ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
+                    ->weight(FontWeight::Bold)
+                    ->extraAttributes(['class' => 'pb-4 mb-4 border-b border-gray-100 dark:border-gray-800']),
+                
+                Infolists\Components\Grid::make(4)->schema([
                     Infolists\Components\IconEntry::make('is_pinned')
                         ->label('Pinned')
                         ->boolean(),
@@ -138,8 +133,15 @@ class AnnouncementResource extends Resource
                         ->label('Comments')
                         ->state(fn ($record) => $record->comments()->count())
                         ->icon('heroicon-m-chat-bubble-left'),
-                ])->grow(false),
-            ])->from('lg'),
+                ]),
+                
+                Infolists\Components\TextEntry::make('body')
+                    ->hiddenLabel()
+                    ->html()
+                    ->columnSpanFull()
+                    ->prose()
+                    ->extraAttributes(['class' => 'max-w-none']),
+            ])->columnSpanFull(),
         ]);
     }
 

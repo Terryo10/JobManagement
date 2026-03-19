@@ -13,6 +13,11 @@ class AnnouncementCommentsRelationManager extends RelationManager
     protected static string $relationship = 'comments';
     protected static ?string $title = 'Comments';
 
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
+
     public function form(Form $form): Form
     {
         return $form->schema([
