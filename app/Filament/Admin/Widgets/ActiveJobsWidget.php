@@ -11,7 +11,7 @@ class ActiveJobsWidget extends BaseWidget
 {
     protected static ?int $sort = 4;
     protected int | string | array $columnSpan = 'full';
-    protected static ?string $heading = 'Active Job Cards';
+    protected static ?string $heading = 'Active Jobs';
 
     public function table(Table $table): Table
     {

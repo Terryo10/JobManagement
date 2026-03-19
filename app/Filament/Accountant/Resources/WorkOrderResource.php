@@ -16,7 +16,7 @@ class WorkOrderResource extends Resource
 {
     protected static ?string $model = WorkOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $navigationLabel = 'Job Cards';
+    protected static ?string $navigationLabel = 'Work Orders';
     protected static ?int $navigationSort = 1;
 
     public static function canCreate(): bool

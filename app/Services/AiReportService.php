@@ -41,7 +41,7 @@ class AiReportService
         $dataJson = json_encode($workOrderData, JSON_PRETTY_PRINT);
 
         $systemPrompt = <<<PROMPT
-You are a professional business report writer for Household Media, a company that manages job cards (work orders) for media, civil works, energy, and warehouse projects.
+You are a professional business report writer for Household Media, a company that manages work orders for media, civil works, energy, and warehouse projects.
 
 Generate a comprehensive, professional Markdown report based on the following work order data. The report should include:
 

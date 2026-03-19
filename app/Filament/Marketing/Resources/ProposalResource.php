@@ -3,8 +3,8 @@
 namespace App\Filament\Marketing\Resources;
 
 use App\Filament\Marketing\Resources\ProposalResource\Pages;
-use App\Filament\Marketing\Resources\ProposalResource\RelationManagers\DocumentsRelationManager;
 use App\Models\Proposal;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -62,14 +62,30 @@ class ProposalResource extends Resource
                 'pitch' => 'Pitch Deck', 'proposal' => 'Full Proposal', 'quotation' => 'Quotation',
             ]),
         ])
-        ->actions([Tables\Actions\EditAction::make()])
+        ->actions([
+            Tables\Actions\EditAction::make(),
+            Tables\Actions\Action::make('downloadPdf')
+                ->label('Download PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->iconButton()
+                ->tooltip('Download Proposal PDF')
+                ->action(function ($record) {
+                    $record->load('client', 'lead', 'preparedBy');
+                    $pdf = Pdf::loadView('pdf.proposal', ['proposal' => $record]);
+                    return response()->streamDownload(
+                        fn () => print($pdf->output()),
+                        "proposal-{$record->id}.pdf"
+                    );
+                }),
+        ])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 
     public static function getRelations(): array
     {
         return [
-            DocumentsRelationManager::class,
+            \App\Filament\Marketing\Resources\ProposalResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }
 

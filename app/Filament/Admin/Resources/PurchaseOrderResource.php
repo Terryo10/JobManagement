@@ -14,6 +14,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 
 class PurchaseOrderResource extends Resource
 {
@@ -62,6 +63,16 @@ class PurchaseOrderResource extends Resource
                     ])
                     ->default('draft')
                     ->required(),
+                Forms\Components\Select::make('work_order_id')
+                    ->relationship('workOrder', 'reference_number')
+                    ->searchable()
+                    ->preload()
+                    ->label('Link to Work Order')
+                    ->columnSpanFull(),
+                Forms\Components\FileUpload::make('attachment')
+                    ->label('Attachment (Optional)')
+                    ->directory('requisition-attachments')
+                    ->columnSpanFull(),
                 Forms\Components\Textarea::make('notes')
                     ->label('Additional Notes')
                     ->rows(3)
@@ -82,6 +93,11 @@ class PurchaseOrderResource extends Resource
                     ->label('Purpose')
                     ->searchable()
                     ->wrap(),
+                Tables\Columns\TextColumn::make('workOrder.reference_number')
+                    ->label('Work Order')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('orderedBy.name')
                     ->label('Requested By'),
                 Tables\Columns\TextColumn::make('total_amount')
@@ -182,9 +198,16 @@ class PurchaseOrderResource extends Resource
                 Infolists\Components\TextEntry::make('orderedBy.name')->label('Requested By'),
                 Infolists\Components\TextEntry::make('total_amount')->label('Amount')->money('usd'),
                 Infolists\Components\TextEntry::make('status')->badge(),
+                Infolists\Components\TextEntry::make('workOrder.reference_number')->label('Work Order')->placeholder('—'),
                 Infolists\Components\TextEntry::make('financeApprovedBy.name')->label('Finance Approved By')->placeholder('—'),
                 Infolists\Components\TextEntry::make('approvedBy.name')->label('Final Approved By')->placeholder('—'),
                 Infolists\Components\TextEntry::make('title')->label('Purpose')->columnSpanFull(),
+                Infolists\Components\TextEntry::make('attachment')
+                    ->label('Attachment')
+                    ->formatStateUsing(fn ($state) => $state ? 'View / Download' : '—')
+                    ->url(fn ($state) => $state ? Storage::url($state) : null)
+                    ->openUrlInNewTab()
+                    ->columnSpanFull(),
                 Infolists\Components\TextEntry::make('notes')->label('Notes')->columnSpanFull()->placeholder('—'),
             ])->columns(3),
         ]);

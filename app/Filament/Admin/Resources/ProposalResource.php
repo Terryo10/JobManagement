@@ -3,8 +3,8 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\ProposalResource\Pages;
-use App\Filament\Admin\Resources\ProposalResource\RelationManagers\DocumentsRelationManager;
 use App\Models\Proposal;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -86,6 +86,18 @@ class ProposalResource extends Resource
                 ->modalDescription('Are you sure you want to reject this proposal?')
                 ->visible(fn (Proposal $record) => in_array($record->status, ['submitted']))
                 ->action(fn (Proposal $record) => $record->update(['status' => 'rejected'])),
+            Tables\Actions\Action::make('downloadPdf')
+                ->label('Download PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->action(function ($record) {
+                    $record->load('client', 'lead', 'preparedBy');
+                    $pdf = Pdf::loadView('pdf.proposal', ['proposal' => $record]);
+                    return response()->streamDownload(
+                        fn () => print($pdf->output()),
+                        "proposal-{$record->id}.pdf"
+                    );
+                }),
         ])
         ->bulkActions([]);
     }
@@ -122,7 +134,7 @@ class ProposalResource extends Resource
     public static function getRelations(): array
     {
         return [
-            DocumentsRelationManager::class,
+            \App\Filament\Admin\Resources\ProposalResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }
 

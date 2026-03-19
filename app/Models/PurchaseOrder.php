@@ -13,6 +13,7 @@ class PurchaseOrder extends Model
         'title', 'reference_number', 'status', 'ordered_by',
         'approved_by', 'finance_approved_by', 'total_amount',
         'expected_delivery', 'delivered_at', 'notes',
+        'work_order_id', 'attachment',
     ];
 
     protected function casts(): array
@@ -52,5 +53,10 @@ class PurchaseOrder extends Model
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function workOrder(): BelongsTo
+    {
+        return $this->belongsTo(WorkOrder::class);
     }
 }
