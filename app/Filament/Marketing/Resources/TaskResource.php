@@ -25,7 +25,12 @@ class TaskResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make()->schema([
-                Forms\Components\Select::make('work_order_id')->relationship('workOrder', 'reference_number')->searchable()->preload()->required(),
+                Forms\Components\Select::make('work_order_id')
+                    ->relationship('workOrder', 'reference_number')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
+                    ->searchable()
+                    ->preload()
+                    ->required(),
                 Forms\Components\TextInput::make('title')->required()->maxLength(255)->columnSpanFull(),
                 Forms\Components\Select::make('assigned_to')->relationship('assignedTo', 'name')->searchable()->preload(),
                 Forms\Components\Select::make('department_id')->relationship('department', 'name')->searchable()->preload(),

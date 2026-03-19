@@ -17,6 +17,9 @@ class StaffAvailabilityResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     protected static ?string $navigationGroup = 'HR';
     protected static ?int $navigationSort = 4;
+    protected static ?string $navigationLabel = 'Leave Requests';
+    protected static ?string $modelLabel = 'Leave Request';
+    protected static ?string $pluralModelLabel = 'Leave Requests';
 
     public static function form(Form $form): Form
     {

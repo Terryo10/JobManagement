@@ -15,9 +15,11 @@ class StaffAvailabilityResource extends Resource
 {
     protected static ?string $model = StaffAvailability::class;
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
-    protected static ?string $navigationLabel = 'Leave & Availability';
+    protected static ?string $navigationLabel = 'Leave Requests';
     protected static ?string $navigationGroup = 'My Work';
     protected static ?int $navigationSort = 4;
+    protected static ?string $modelLabel = 'Leave Request';
+    protected static ?string $pluralModelLabel = 'Leave Requests';
 
     public static function getEloquentQuery(): Builder
     {
@@ -28,7 +30,7 @@ class StaffAvailabilityResource extends Resource
     {
         return $form->schema([
             Forms\Components\Hidden::make('user_id')->default(fn () => auth()->id()),
-            Forms\Components\Section::make('When are you unavailable?')
+            Forms\Components\Section::make('Leave Request Details')
                 ->description('Management will be notified and your calendar will be blocked for this period.')
                 ->schema([
                     Forms\Components\DatePicker::make('unavailable_from')

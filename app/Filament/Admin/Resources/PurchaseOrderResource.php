@@ -65,6 +65,7 @@ class PurchaseOrderResource extends Resource
                     ->required(),
                 Forms\Components\Select::make('work_order_id')
                     ->relationship('workOrder', 'reference_number')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
                     ->searchable()
                     ->preload()
                     ->label('Link to Work Order')

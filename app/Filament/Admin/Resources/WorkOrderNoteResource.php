@@ -21,7 +21,10 @@ class WorkOrderNoteResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('work_order_id')->relationship('workOrder', 'reference_number')->searchable()->preload()->required(),
+            Forms\Components\Select::make('work_order_id')
+                ->relationship('workOrder', 'reference_number')
+                ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
+                ->searchable()->preload()->required(),
             Forms\Components\Select::make('user_id')->relationship('user', 'name')->searchable()->preload()->required(),
             Forms\Components\Toggle::make('is_internal')->label('Internal (Staff Only)')->default(true),
             Forms\Components\Textarea::make('body')->required()->rows(5)->columnSpanFull(),
