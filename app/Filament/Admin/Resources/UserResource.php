@@ -6,9 +6,11 @@ use App\Filament\Admin\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
@@ -46,7 +48,39 @@ class UserResource extends Resource
             Tables\Filters\SelectFilter::make('department')->relationship('department', 'name'),
             Tables\Filters\TernaryFilter::make('is_active'),
         ])
-        ->actions([Tables\Actions\EditAction::make()])
+        ->actions([
+            Tables\Actions\EditAction::make(),
+            Tables\Actions\Action::make('resetPassword')
+                ->label('Reset Password')
+                ->icon('heroicon-o-lock-closed')
+                ->color('warning')
+                ->modalHeading(fn (User $record) => "Reset Password for {$record->name}")
+                ->modalDescription('Set a new password for this user. They will need to use this new password to log in.')
+                ->modalSubmitActionLabel('Reset Password')
+                ->form([
+                    Forms\Components\TextInput::make('password')
+                        ->label('New Password')
+                        ->password()
+                        ->revealable()
+                        ->required()
+                        ->minLength(8)
+                        ->same('password_confirmation'),
+                    Forms\Components\TextInput::make('password_confirmation')
+                        ->label('Confirm New Password')
+                        ->password()
+                        ->revealable()
+                        ->required()
+                        ->dehydrated(false),
+                ])
+                ->action(function (User $record, array $data): void {
+                    $record->update(['password' => Hash::make($data['password'])]);
+
+                    Notification::make()
+                        ->title("Password reset for {$record->name}.")
+                        ->success()
+                        ->send();
+                }),
+        ])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 

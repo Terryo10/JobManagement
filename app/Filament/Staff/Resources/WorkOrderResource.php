@@ -87,9 +87,6 @@ class WorkOrderResource extends Resource
                                     ->disabled(fn (\Filament\Forms\Get $get) => ! $get('client_id'))
                                     ->helperText('Select a client first')
                                     ->label('Lead'),
-                                \Filament\Forms\Components\TextInput::make('details.lead_person')
-                                    ->label('Lead Person')
-                                    ->maxLength(255),
                             ]),
                     ]),
 
@@ -374,7 +371,6 @@ class WorkOrderResource extends Resource
                     Infolists\Components\TextEntry::make('title')->columnSpanFull(),
                     Infolists\Components\TextEntry::make('client.company_name')->label('Client'),
                     Infolists\Components\TextEntry::make('assignedDepartment.name')->label('Department'),
-                    Infolists\Components\TextEntry::make('details.lead_person')->label('Lead Person')->default('—'),
                     Infolists\Components\TextEntry::make('category')->badge(),
                     Infolists\Components\TextEntry::make('status')->badge()->color(fn ($state) => match ($state) {
                         'pending' => 'gray', 'in_progress' => 'warning', 'on_hold' => 'info',
@@ -474,6 +470,7 @@ class WorkOrderResource extends Resource
             \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\SafetyChecklistRelationManager::class,
             \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\CollaboratorsRelationManager::class,
             \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\DocumentsRelationManager::class,
+            \App\Filament\Staff\Resources\WorkOrderResource\RelationManagers\CommentsRelationManager::class,
         ];
     }
 

@@ -53,6 +53,7 @@ class PurchaseOrderResource extends Resource
                     ->default(fn () => 'REQ-' . now()->format('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT)),
                 Forms\Components\Select::make('work_order_id')
                     ->relationship('workOrder', 'reference_number')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
                     ->searchable()
                     ->preload()
                     ->label('Link to Work Order')

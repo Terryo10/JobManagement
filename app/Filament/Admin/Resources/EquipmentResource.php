@@ -26,7 +26,10 @@ class EquipmentResource extends Resource
             Forms\Components\TextInput::make('category')->required()->maxLength(100),
             Forms\Components\Select::make('division')->options(['civil_works' => 'Civil Works', 'energy' => 'Energy'])->required(),
             Forms\Components\Select::make('status')->options(['available' => 'Available', 'in_use' => 'In Use', 'maintenance' => 'Maintenance', 'retired' => 'Retired'])->default('available')->required(),
-            Forms\Components\Select::make('current_work_order_id')->relationship('currentWorkOrder', 'reference_number')->searchable()->preload()->label('Current Work Order'),
+            Forms\Components\Select::make('current_work_order_id')
+                ->relationship('currentWorkOrder', 'reference_number')
+                ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
+                ->searchable()->preload()->label('Current Work Order'),
             Forms\Components\DatePicker::make('purchase_date'),
             Forms\Components\DatePicker::make('next_maintenance_date'),
             Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),

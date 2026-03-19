@@ -2,7 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\Invoice;
+use App\Models\Lead;
+use App\Models\StockLevel;
+use App\Models\Task;
+use App\Models\User;
+use App\Models\WorkOrder;
+use App\Models\Proposal;
+use App\Models\PurchaseOrder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class AiReportService
@@ -11,11 +20,386 @@ class AiReportService
     private string $model;
     private string $apiUrl;
 
+    private const TOPIC_LABELS = [
+        'work_orders' => 'Work Orders & Job Operations',
+        'finance'     => 'Finance & Invoices',
+        'staff'       => 'Staff Activity & Performance',
+        'crm'         => 'CRM, Leads & Proposals',
+        'inventory'   => 'Inventory & Stock Levels',
+    ];
+
     public function __construct()
     {
         $this->apiKey = config('services.gemini.api_key', '');
         $this->model = config('services.gemini.model', 'gemini-1.5-flash');
         $this->apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent";
+    }
+
+    // ─── AI Assistant Widget ───────────────────────────────────────────────────
+
+    /**
+     * Fetch live data for a topic and generate a Gemini summary.
+     * Returns [contextData, summaryMarkdown].
+     */
+    public function getTopicSummaryWithContext(string $topic): array
+    {
+        $data    = $this->fetchTopicData($topic);
+        $summary = $this->generateTopicSummary($topic, $data);
+
+        return [$data, $summary];
+    }
+
+    /**
+     * Continue a multi-turn chat about a topic using previously fetched context.
+     * $messages is the full history including the latest user message.
+     */
+    public function chatAboutTopic(string $topic, array $contextData, array $messages): string
+    {
+        $label    = self::TOPIC_LABELS[$topic] ?? $topic;
+        $dataJson = json_encode($contextData, JSON_PRETTY_PRINT);
+
+        $systemContext = <<<PROMPT
+You are a smart business assistant for Household Media. You have access to the following live {$label} data pulled right now. Answer questions concisely, helpfully, and based on this data.
+
+## Current Live Data
+
+```json
+{$dataJson}
+```
+PROMPT;
+
+        $contents = [
+            ['role' => 'user',  'parts' => [['text' => $systemContext . "\n\nAcknowledge you have this data and are ready to help."]]],
+            ['role' => 'model', 'parts' => [['text' => "Got it — I have the latest {$label} data loaded and I'm ready to answer your questions."]]],
+        ];
+
+        $history = array_slice($messages, 0, -1);
+        foreach ($history as $msg) {
+            $contents[] = [
+                'role'  => $msg['role'] === 'user' ? 'user' : 'model',
+                'parts' => [['text' => $msg['content']]],
+            ];
+        }
+
+        $last      = end($messages);
+        $contents[] = ['role' => 'user', 'parts' => [['text' => $last['content']]]];
+
+        return $this->callGeminiMultiTurn($contents);
+    }
+
+    // ─── Private: data fetchers ────────────────────────────────────────────────
+
+    private function fetchTopicData(string $topic): array
+    {
+        return match ($topic) {
+            'work_orders' => $this->fetchWorkOrderData(),
+            'finance'     => $this->fetchFinanceData(),
+            'staff'       => $this->fetchStaffData(),
+            'crm'         => $this->fetchCrmData(),
+            'inventory'   => $this->fetchInventoryData(),
+            default       => [],
+        };
+    }
+
+    private function fetchWorkOrderData(): array
+    {
+        $now = now();
+
+        $byStatus = WorkOrder::selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $overdue = WorkOrder::whereNotIn('status', ['completed', 'cancelled'])
+            ->whereNotNull('deadline')
+            ->where('deadline', '<', $now)
+            ->count();
+
+        $urgent = WorkOrder::whereNotIn('status', ['completed', 'cancelled'])
+            ->where('priority', 'urgent')
+            ->count();
+
+        $recent = WorkOrder::with([
+                'client:id,company_name',
+                'tasks' => fn ($q) => $q->whereNotIn('status', ['cancelled'])
+                    ->with('assignedTo:id,name')
+                    ->select('id', 'work_order_id', 'title', 'status', 'priority', 'deadline', 'assigned_to', 'completion_percentage'),
+            ])
+            ->orderByDesc('created_at')
+            ->limit(15)
+            ->get()
+            ->map(fn ($wo) => [
+                'ref'         => $wo->reference_number,
+                'title'       => $wo->title,
+                'client'      => $wo->client?->company_name,
+                'status'      => $wo->status,
+                'priority'    => $wo->priority,
+                'category'    => $wo->category,
+                'deadline'    => $wo->deadline?->format('Y-m-d'),
+                'budget'      => $wo->budget,
+                'actual_cost' => $wo->actual_cost,
+                'tasks'       => $wo->tasks->map(fn ($t) => [
+                    'title'          => $t->title,
+                    'status'         => $t->status,
+                    'priority'       => $t->priority,
+                    'assigned_to'    => $t->assignedTo?->name ?? 'Unassigned',
+                    'deadline'       => $t->deadline?->format('Y-m-d'),
+                    'completion_pct' => $t->completion_percentage,
+                ])->toArray(),
+            ])->toArray();
+
+        return [
+            'as_of'             => $now->toDateTimeString(),
+            'totals_by_status'  => $byStatus,
+            'overdue_count'     => $overdue,
+            'urgent_count'      => $urgent,
+            'recent_work_orders'=> $recent,
+        ];
+    }
+
+    private function fetchFinanceData(): array
+    {
+        $now = now();
+
+        $byStatus = Invoice::selectRaw('status, count(*) as count, sum(total) as total')
+            ->groupBy('status')
+            ->get()
+            ->mapWithKeys(fn ($r) => [$r->status => ['count' => $r->count, 'total' => (float) $r->total]])
+            ->toArray();
+
+        $outstanding = Invoice::whereIn('status', ['sent', 'signed', 'approved', 'overdue'])->sum('total');
+        $paidThisMonth = Invoice::where('status', 'paid')
+            ->whereBetween('paid_at', [$now->copy()->startOfMonth(), $now])
+            ->sum('total');
+
+        $overdue = Invoice::where('status', 'overdue')
+            ->orWhere(fn ($q) => $q->whereIn('status', ['sent', 'approved'])->where('due_at', '<', $now))
+            ->count();
+
+        $recent = Invoice::with('client:id,company_name')
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get()
+            ->map(fn ($inv) => [
+                'number'  => $inv->invoice_number,
+                'client'  => $inv->client?->company_name,
+                'status'  => $inv->status,
+                'total'   => (float) $inv->total,
+                'due_at'  => $inv->due_at?->format('Y-m-d'),
+                'paid_at' => $inv->paid_at?->format('Y-m-d'),
+            ])->toArray();
+
+        return [
+            'as_of'             => $now->toDateTimeString(),
+            'invoices_by_status'=> $byStatus,
+            'outstanding_total' => (float) $outstanding,
+            'paid_this_month'   => (float) $paidThisMonth,
+            'overdue_count'     => $overdue,
+            'recent_invoices'   => $recent,
+        ];
+    }
+
+    private function fetchStaffData(): array
+    {
+        $now = now();
+
+        // All active staff
+        $activeStaff = User::where('is_active', true)
+            ->get(['id', 'name', 'email'])
+            ->keyBy('id');
+
+        // All open tasks with full detail
+        $openTasks = Task::whereNotIn('status', ['completed', 'cancelled'])
+            ->with([
+                'assignedTo:id,name',
+                'workOrder:id,reference_number,title',
+            ])
+            ->orderBy('deadline')
+            ->get([
+                'id', 'title', 'status', 'priority',
+                'deadline', 'assigned_to',
+                'work_order_id', 'completion_percentage',
+            ]);
+
+        // Tasks completed this week (with who completed them)
+        $completedThisWeek = Task::where('status', 'completed')
+            ->where('updated_at', '>=', $now->copy()->startOfWeek())
+            ->with('assignedTo:id,name', 'workOrder:id,reference_number')
+            ->get(['id', 'title', 'assigned_to', 'work_order_id', 'updated_at'])
+            ->map(fn ($t) => [
+                'title'      => $t->title,
+                'staff'      => $t->assignedTo?->name ?? 'Unassigned',
+                'work_order' => $t->workOrder?->reference_number,
+                'completed'  => $t->updated_at->format('Y-m-d'),
+            ])->values()->toArray();
+
+        // Group open tasks by person
+        $tasksByPerson = [];
+        $unassignedTasks = [];
+
+        foreach ($openTasks as $task) {
+            $isOverdue = $task->deadline && $task->deadline->isPast();
+            $detail = [
+                'task'               => $task->title,
+                'status'             => $task->status,
+                'priority'           => $task->priority,
+                'deadline'           => $task->deadline?->format('Y-m-d'),
+                'overdue'            => $isOverdue,
+                'work_order'         => $task->workOrder?->reference_number ?? null,
+                'work_order_title'   => $task->workOrder?->title ?? null,
+                'completion_pct'     => $task->completion_percentage,
+            ];
+
+            if ($task->assigned_to && isset($activeStaff[$task->assigned_to])) {
+                $name = $activeStaff[$task->assigned_to]->name;
+                $tasksByPerson[$name][] = $detail;
+            } else {
+                $unassignedTasks[] = $detail;
+            }
+        }
+
+        // Staff with zero open tasks
+        $assignedIds = $openTasks->whereNotNull('assigned_to')->pluck('assigned_to')->unique();
+        $idleStaff = $activeStaff
+            ->whereNotIn('id', $assignedIds)
+            ->pluck('name')
+            ->values()
+            ->toArray();
+
+        // Summary counts
+        $tasksByStatus = $openTasks->groupBy('status')
+            ->map(fn ($g) => $g->count())
+            ->toArray();
+
+        $overdueCount = $openTasks->filter(
+            fn ($t) => $t->deadline && $t->deadline->isPast()
+        )->count();
+
+        return [
+            'as_of'                  => $now->toDateTimeString(),
+            'active_staff_count'     => $activeStaff->count(),
+            'open_tasks_by_status'   => $tasksByStatus,
+            'overdue_task_count'     => $overdueCount,
+            'completed_this_week'    => $completedThisWeek,
+            'tasks_per_person'       => $tasksByPerson,
+            'unassigned_tasks'       => $unassignedTasks,
+            'idle_staff_no_tasks'    => $idleStaff,
+        ];
+    }
+
+    private function fetchCrmData(): array
+    {
+        $now = now();
+
+        $leadsByStatus = Lead::selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $newThisMonth = Lead::where('created_at', '>=', $now->copy()->startOfMonth())->count();
+
+        $proposalsByStatus = Proposal::selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $recentLeads = Lead::orderByDesc('created_at')
+            ->limit(10)
+            ->get(['id', 'company_name', 'contact_name', 'status', 'source', 'created_at'])
+            ->map(fn ($l) => [
+                'company' => $l->company_name,
+                'contact' => $l->contact_name,
+                'status'  => $l->status,
+                'source'  => $l->source,
+                'created' => $l->created_at->format('Y-m-d'),
+            ])->toArray();
+
+        return [
+            'as_of'            => $now->toDateTimeString(),
+            'leads_by_status'  => $leadsByStatus,
+            'new_leads_month'  => $newThisMonth,
+            'proposals'        => $proposalsByStatus,
+            'recent_leads'     => $recentLeads,
+        ];
+    }
+
+    private function fetchInventoryData(): array
+    {
+        $now = now();
+
+        $lowStock = StockLevel::join('materials', 'stock_levels.material_id', '=', 'materials.id')
+            ->where('stock_levels.current_quantity', '<=', DB::raw('materials.minimum_stock_level'))
+            ->where('materials.is_active', true)
+            ->select('stock_levels.current_quantity', 'materials.name as material_name', 'materials.unit as material_unit', 'materials.minimum_stock_level')
+            ->limit(20)
+            ->get()
+            ->map(fn ($s) => [
+                'item'          => $s->material_name,
+                'quantity'      => (float) $s->current_quantity,
+                'minimum_level' => (float) $s->minimum_stock_level,
+                'unit'          => $s->material_unit,
+            ])->toArray();
+
+        $recentPOs = PurchaseOrder::orderByDesc('created_at')
+            ->limit(10)
+            ->get(['id', 'reference_number', 'status', 'total_amount', 'created_at'])
+            ->map(fn ($po) => [
+                'ref'    => $po->reference_number,
+                'status' => $po->status,
+                'total'  => (float) $po->total_amount,
+                'date'   => $po->created_at->format('Y-m-d'),
+            ])->toArray();
+
+        $poByStatus = PurchaseOrder::selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        return [
+            'as_of'          => $now->toDateTimeString(),
+            'low_stock_items' => $lowStock,
+            'low_stock_count' => count($lowStock),
+            'purchase_orders' => $poByStatus,
+            'recent_pos'      => $recentPOs,
+        ];
+    }
+
+    private function generateTopicSummary(string $topic, array $data): string
+    {
+        $label    = self::TOPIC_LABELS[$topic] ?? $topic;
+        $dataJson = json_encode($data, JSON_PRETTY_PRINT);
+
+        $prompt = <<<PROMPT
+You are a smart business analyst for Household Media. Analyze the following live {$label} data and write a concise, insightful summary for the admin.
+
+Keep it tight: 4–6 bullet points max. Highlight what's going well, what needs immediate attention, and the most important numbers. No title needed — start directly with the bullets.
+
+## Live Data
+
+```json
+{$dataJson}
+```
+PROMPT;
+
+        return $this->callGemini($prompt);
+    }
+
+    private function callGeminiMultiTurn(array $contents): string
+    {
+        if (empty($this->apiKey)) {
+            return '**Error:** Gemini API key is not configured. Please set `GEMINI_API_KEY` in your `.env` file.';
+        }
+
+        $response = Http::timeout(60)->post("{$this->apiUrl}?key={$this->apiKey}", [
+            'contents'         => $contents,
+            'generationConfig' => ['temperature' => 0.7, 'maxOutputTokens' => 2048],
+        ]);
+
+        if ($response->failed()) {
+            return '**API Error:** ' . $response->json('error.message', 'Unknown error');
+        }
+
+        return $response->json('candidates.0.content.parts.0.text', '*(No content returned)*');
     }
 
     public function generateReport(Collection $workOrders, string $customInstructions = ''): string

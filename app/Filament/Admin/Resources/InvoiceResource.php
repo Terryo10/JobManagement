@@ -40,7 +40,9 @@ class InvoiceResource extends Resource
                     Forms\Components\Select::make('client_id')
                         ->relationship('client', 'company_name')->searchable()->preload()->required(),
                     Forms\Components\Select::make('work_order_id')
-                        ->relationship('workOrder', 'reference_number')->searchable()->preload()
+                        ->relationship('workOrder', 'reference_number')
+                        ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
+                        ->searchable()->preload()
                         ->helperText('Link to a specific job card'),
                     Forms\Components\Select::make('status')
                         ->options([

@@ -21,7 +21,10 @@ class WorkOrderMaterialResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('work_order_id')->relationship('workOrder', 'reference_number')->searchable()->preload()->required(),
+            Forms\Components\Select::make('work_order_id')
+                ->relationship('workOrder', 'reference_number')
+                ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
+                ->searchable()->preload()->required(),
             Forms\Components\Select::make('material_id')->relationship('material', 'name')->searchable()->preload()->required(),
             Forms\Components\TextInput::make('quantity_used')->numeric()->required(),
             Forms\Components\TextInput::make('unit_cost_at_time')->numeric()->prefix('USD'),

@@ -49,6 +49,7 @@ class EquipmentResource extends Resource
                 ->required(),
             Forms\Components\Select::make('current_work_order_id')
                 ->relationship('currentWorkOrder', 'reference_number')
+                ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
                 ->searchable()
                 ->preload()
                 ->label('Current Work Order'),

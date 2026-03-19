@@ -20,7 +20,10 @@ class SafetyComplianceRecordResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('work_order_id')->relationship('workOrder', 'reference_number')->searchable()->preload()->required(),
+            Forms\Components\Select::make('work_order_id')
+                ->relationship('workOrder', 'reference_number')
+                ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
+                ->searchable()->preload()->required(),
             Forms\Components\TextInput::make('checklist_item')->required()->maxLength(255),
             Forms\Components\Toggle::make('is_complete')->default(false),
             Forms\Components\Select::make('completed_by')->relationship('completedBy', 'name')->searchable()->preload(),
