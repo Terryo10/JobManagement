@@ -21,4 +21,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 ($request->is('staff*') ? '/staff/login' : '/admin/login')
             );
         });
+
+        $exceptions->renderable(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            return redirect()->guest(
+                $request->is('client*') ? '/client/login' :
+                ($request->is('staff*') ? '/staff/login' :
+                ($request->is('accountant*') ? '/accountant/login' :
+                ($request->is('marketing*') ? '/marketing/login' : '/admin/login')))
+            );
+        });
     })->create();
