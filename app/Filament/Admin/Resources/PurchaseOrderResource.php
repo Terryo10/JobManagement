@@ -24,7 +24,7 @@ class PurchaseOrderResource extends Resource
     protected static ?string $breadcrumb = 'Requisitions';
     protected static ?string $pluralLabel = 'Requisitions';
     protected static ?string $modelLabel = 'Requisition';
-    protected static ?string $navigationGroup = 'Warehouse';
+    protected static ?string $navigationGroup = 'Finance';
     protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form

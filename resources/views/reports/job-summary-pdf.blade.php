@@ -1,75 +1,209 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <title>Job Summary Report</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #333; margin: 20px; }
-        h1 { font-size: 18px; margin-bottom: 4px; }
-        .meta { font-size: 10px; color: #666; margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #1e3a5f; color: #fff; padding: 7px 6px; text-align: left; font-size: 10px; }
-        td { padding: 6px; border-bottom: 1px solid #e2e8f0; font-size: 10px; vertical-align: top; }
-        tr:nth-child(even) td { background: #f8fafc; }
-        .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; }
-        .status-pending { background: #e2e8f0; color: #4a5568; }
-        .status-in_progress { background: #fefcbf; color: #744210; }
-        .status-completed { background: #c6f6d5; color: #22543d; }
-        .status-cancelled { background: #fed7d7; color: #742a2a; }
-        .status-on_hold { background: #bee3f8; color: #2a4365; }
-        .footer { margin-top: 20px; font-size: 9px; color: #aaa; text-align: right; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #222; font-size: 10.5px; line-height: 1.4; }
+
+        .page { padding: 20px 28px; }
+
+        /* ── Header ── */
+        .header { border: 2px solid #cc0000; margin-bottom: 16px; }
+        .header-top { display: table; width: 100%; }
+        .header-left { display: table-cell; width: 55%; vertical-align: middle; padding: 14px 18px; border-right: 2px solid #cc0000; }
+        .header-right { display: table-cell; width: 45%; vertical-align: middle; padding: 14px 18px; }
+
+        .company-name { font-size: 15px; font-weight: 900; color: #000; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+        .company-sub { font-size: 9px; color: #555; }
+        .doc-type { font-size: 18px; font-weight: 900; color: #cc0000; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+        .detail-line { margin-bottom: 2px; font-size: 9.5px; color: #444; }
+        .detail-label { font-weight: 700; color: #222; }
+
+        /* ── Summary Bar ── */
+        .summary-bar { display: table; width: 100%; margin-bottom: 14px; border: 1px solid #ccc; }
+        .summary-item { display: table-cell; text-align: center; padding: 8px 6px; border-right: 1px solid #ccc; }
+        .summary-item:last-child { border-right: none; }
+        .summary-number { font-size: 18px; font-weight: 900; color: #cc0000; }
+        .summary-label { font-size: 8px; font-weight: 700; text-transform: uppercase; color: #777; letter-spacing: 0.05em; }
+
+        /* ── Table ── */
+        table.report-table { width: 100%; border-collapse: collapse; border: 1px solid #ccc; }
+        table.report-table th {
+            background: #2d2d2d; color: #fff; padding: 6px 8px;
+            font-size: 8.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.07em; text-align: left; border-right: 1px solid #444;
+        }
+        table.report-table th:last-child { border-right: none; }
+        table.report-table td {
+            padding: 5px 8px; border-bottom: 1px solid #e5e5e5;
+            font-size: 9.5px; vertical-align: middle; border-right: 1px solid #eee;
+        }
+        table.report-table td:last-child { border-right: none; }
+        table.report-table tbody tr:nth-child(even) td { background: #f9f9f9; }
+        table.report-table tbody tr:hover td { background: #f0f4ff; }
+
+        /* Numeric columns */
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        /* ── Badges ── */
+        .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+        .badge-gray    { background: #e5e7eb; color: #374151; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-info    { background: #dbeafe; color: #1e40af; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-danger  { background: #fee2e2; color: #991b1b; }
+
+        /* Category badges */
+        .cat-media      { background: #dbeafe; color: #1e40af; }
+        .cat-civil      { background: #fef3c7; color: #92400e; }
+        .cat-energy     { background: #d1fae5; color: #065f46; }
+        .cat-warehouse  { background: #e0e7ff; color: #3730a3; }
+
+        /* ── Footer ── */
+        .footer { margin-top: 16px; border-top: 2px solid #cc0000; padding-top: 6px; display: table; width: 100%; }
+        .footer-left  { display: table-cell; width: 60%; font-size: 8.5px; color: #777; }
+        .footer-right { display: table-cell; width: 40%; text-align: right; font-size: 8.5px; color: #777; }
+
+        /* ── Empty state ── */
+        .empty-state { text-align: center; padding: 40px; color: #999; font-size: 12px; border: 1px solid #e5e5e5; }
     </style>
 </head>
 <body>
-    <h1>Job Summary Report</h1>
-    <div class="meta">
-        Generated: {{ $generatedAt }}
-        @if($filterStatus) &nbsp;|&nbsp; Status: {{ ucfirst(str_replace('_', ' ', $filterStatus)) }} @endif
-        @if($filterCategory) &nbsp;|&nbsp; Category: {{ ucfirst(str_replace('_', ' ', $filterCategory)) }} @endif
-        &nbsp;|&nbsp; Total: {{ $records->count() }} job(s)
+<div class="page">
+
+    {{-- ─── HEADER ─────────────────────────────────────────────────────────── --}}
+    <div class="header">
+        <div class="header-top">
+            <div class="header-left">
+                <div style="margin-bottom: 6px;">
+                    @if(file_exists(public_path('images/logo.png')))
+                        <img src="{{ public_path('images/logo.png') }}" alt="Household Brands" style="max-width: 100px; height: auto;">
+                    @elseif(file_exists(public_path('images/logo.jpg')))
+                        <img src="{{ public_path('images/logo.jpg') }}" alt="Household Brands" style="max-width: 100px; height: auto;">
+                    @else
+                        <div style="font-family: 'Arial Black', Arial, sans-serif; font-size: 22px; font-weight: 900; color: #000; padding: 8px 0;">HOUSEHOLD</div>
+                    @endif
+                </div>
+                <div class="company-name">HouseHold Brands (Pvt) Ltd</div>
+                <div class="company-sub">Job Management System</div>
+            </div>
+            <div class="header-right">
+                <div class="doc-type">Job Summary</div>
+                <div class="detail-line"><span class="detail-label">Generated:</span> {{ $generatedAt }}</div>
+                @if($filterStatus)
+                    <div class="detail-line"><span class="detail-label">Status Filter:</span> {{ ucfirst(str_replace('_', ' ', $filterStatus)) }}</div>
+                @endif
+                @if($filterCategory)
+                    <div class="detail-line"><span class="detail-label">Category Filter:</span> {{ ucfirst(str_replace('_', ' ', $filterCategory)) }}</div>
+                @endif
+                <div class="detail-line"><span class="detail-label">Total Jobs:</span> {{ $records->count() }}</div>
+            </div>
+        </div>
     </div>
 
-    <table>
+    {{-- ─── SUMMARY STATS ─────────────────────────────────────────────────── --}}
+    @php
+        $totalBudget = $records->sum('budget');
+        $totalActual = $records->sum('actual_cost');
+        $totalTasks = $records->sum('tasks_count');
+        $totalDone = $records->sum('completed_tasks_count');
+        $completedJobs = $records->where('status', 'completed')->count();
+        $inProgressJobs = $records->where('status', 'in_progress')->count();
+    @endphp
+    <div class="summary-bar">
+        <div class="summary-item">
+            <div class="summary-number">{{ $records->count() }}</div>
+            <div class="summary-label">Total Jobs</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-number">{{ $inProgressJobs }}</div>
+            <div class="summary-label">In Progress</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-number">{{ $completedJobs }}</div>
+            <div class="summary-label">Completed</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-number">${{ number_format($totalBudget, 0) }}</div>
+            <div class="summary-label">Total Budget</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-number">${{ number_format($totalActual, 0) }}</div>
+            <div class="summary-label">Total Actual</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-number">{{ $totalTasks }}</div>
+            <div class="summary-label">Tasks</div>
+        </div>
+    </div>
+
+    {{-- ─── DATA TABLE ─────────────────────────────────────────────────────── --}}
+    @if($records->count() > 0)
+    <table class="report-table">
         <thead>
             <tr>
-                <th>Ref #</th>
-                <th>Title</th>
-                <th>Client</th>
-                <th>Dept</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Budget</th>
-                <th>Actual Cost</th>
-                <th>Tasks</th>
-                <th>Done</th>
-                <th>Deadline</th>
+                <th style="width: 10%;">Ref #</th>
+                <th style="width: 18%;">Title</th>
+                <th style="width: 12%;">Client</th>
+                <th style="width: 10%;">Dept</th>
+                <th style="width: 8%;">Category</th>
+                <th style="width: 8%;">Status</th>
+                <th style="width: 9%;">Budget</th>
+                <th style="width: 9%;">Actual</th>
+                <th style="width: 5%;">Tasks</th>
+                <th style="width: 5%;">Done</th>
+                <th style="width: 8%;">Deadline</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($records as $record)
+            @foreach($records as $record)
             <tr>
-                <td>{{ $record->reference_number }}</td>
-                <td>{{ \Str::limit($record->title, 30) }}</td>
-                <td>{{ $record->client?->company_name ?? '—' }}</td>
-                <td>{{ $record->assignedDepartment?->name ?? '—' }}</td>
-                <td>{{ ucfirst(str_replace('_', ' ', $record->category ?? '')) }}</td>
+                <td style="font-weight: 600;">{{ $record->reference_number }}</td>
+                <td>{{ \Str::limit($record->title, 28) }}</td>
+                <td>{{ \Str::limit($record->client?->company_name ?? '—', 18) }}</td>
+                <td>{{ \Str::limit($record->assignedDepartment?->name ?? '—', 14) }}</td>
                 <td>
-                    <span class="badge status-{{ $record->status }}">
-                        {{ ucfirst(str_replace('_', ' ', $record->status ?? '')) }}
-                    </span>
+                    @php
+                        $catClass = match($record->category) {
+                            'media' => 'cat-media', 'civil_works' => 'cat-civil',
+                            'energy' => 'cat-energy', 'warehouse' => 'cat-warehouse',
+                            default => 'badge-gray',
+                        };
+                    @endphp
+                    <span class="badge {{ $catClass }}">{{ ucfirst(str_replace('_', ' ', $record->category ?? '')) }}</span>
                 </td>
-                <td>{{ $record->budget ? '$' . number_format($record->budget, 2) : '—' }}</td>
-                <td>{{ $record->actual_cost ? '$' . number_format($record->actual_cost, 2) : '—' }}</td>
-                <td>{{ $record->tasks_count }}</td>
-                <td>{{ $record->completed_tasks_count }}</td>
+                <td>
+                    @php
+                        $statusClass = match($record->status) {
+                            'pending' => 'badge-gray', 'in_progress' => 'badge-warning',
+                            'completed' => 'badge-success', 'cancelled' => 'badge-danger',
+                            'on_hold' => 'badge-info', default => 'badge-gray',
+                        };
+                    @endphp
+                    <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $record->status ?? '')) }}</span>
+                </td>
+                <td class="text-right">{{ $record->budget ? '$' . number_format($record->budget, 2) : '—' }}</td>
+                <td class="text-right">{{ $record->actual_cost ? '$' . number_format($record->actual_cost, 2) : '—' }}</td>
+                <td class="text-center">{{ $record->tasks_count }}</td>
+                <td class="text-center">{{ $record->completed_tasks_count }}</td>
                 <td>{{ $record->deadline?->format('d M Y') ?? '—' }}</td>
             </tr>
-            @empty
-            <tr><td colspan="11" style="text-align:center; color:#999;">No records found.</td></tr>
-            @endforelse
+            @endforeach
         </tbody>
     </table>
+    @else
+    <div class="empty-state">No records match the selected filters.</div>
+    @endif
 
-    <div class="footer">Household Media — Job Management System</div>
+    {{-- ─── FOOTER ──────────────────────────────────────────────────────────── --}}
+    <div class="footer">
+        <div class="footer-left">HouseHold Brands (Pvt) Ltd &mdash; Confidential</div>
+        <div class="footer-right">{{ $generatedAt }}</div>
+    </div>
+
+</div>
 </body>
 </html>

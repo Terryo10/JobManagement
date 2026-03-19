@@ -146,6 +146,9 @@ class TaskResource extends Resource
     public static function getRelations(): array
     {
         return [
+            \App\Filament\Staff\Resources\TaskResource\RelationManagers\SubtasksRelationManager::class,
+            \App\Filament\Staff\Resources\TaskResource\RelationManagers\CommentsRelationManager::class,
+            \App\Filament\Staff\Resources\TaskResource\RelationManagers\TimeLogsRelationManager::class,
             \App\Filament\Staff\Resources\TaskResource\RelationManagers\DocumentsRelationManager::class,
         ];
     }

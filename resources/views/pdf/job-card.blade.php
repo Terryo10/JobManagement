@@ -426,8 +426,8 @@
 
     {{-- ─── FOOTER ──────────────────────────────────────────────────────────── --}}
     <div class="footer">
-        <div class="footer-left">{{ config('app.name') }} &mdash; Confidential Document</div>
-        <div class="footer-right">Generated {{ $generatedAt }}</div>
+        <div class="footer-left">HouseHold Brands (Pvt) Ltd</div>
+        <div class="footer-right">{{ $generatedAt }}</div>
     </div>
 
 </div>

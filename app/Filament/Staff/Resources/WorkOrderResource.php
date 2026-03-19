@@ -4,6 +4,7 @@ namespace App\Filament\Staff\Resources;
 
 use App\Filament\Staff\Resources\WorkOrderResource\Pages;
 use App\Models\WorkOrder;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
@@ -361,6 +362,21 @@ class WorkOrderResource extends Resource
         ])
         ->actions([
             Tables\Actions\ViewAction::make(),
+            Tables\Actions\Action::make('downloadPdf')
+                ->label('PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->action(function ($record) {
+                    $record->load(['client', 'assignedDepartment', 'claimedBy', 'createdBy', 'lead']);
+                    $pdf = Pdf::loadView('pdf.job-card', [
+                        'workOrder'   => $record,
+                        'generatedAt' => now()->format('d M Y H:i'),
+                    ])->setPaper('a4');
+                    return response()->streamDownload(
+                        fn () => print($pdf->output()),
+                        'job-card-' . $record->reference_number . '.pdf'
+                    );
+                }),
         ]);
     }
 
