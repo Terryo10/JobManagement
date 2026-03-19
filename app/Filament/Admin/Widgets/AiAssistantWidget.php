@@ -8,7 +8,7 @@ use Filament\Widgets\Widget;
 class AiAssistantWidget extends Widget
 {
     protected static string $view = 'filament.admin.widgets.ai-assistant-widget';
-    protected static ?int $sort = 2;
+    protected static ?int $sort = -1;
     protected int | string | array $columnSpan = 1;
 
     public string $selectedTopic = 'work_orders';

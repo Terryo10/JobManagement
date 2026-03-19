@@ -8,7 +8,7 @@ use Filament\Widgets\Widget;
 class AnnouncementsWidget extends Widget
 {
     protected static ?int $sort = -1;
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 1;
     protected static string $view = 'filament.widgets.announcements-widget';
 
     protected function getViewData(): array

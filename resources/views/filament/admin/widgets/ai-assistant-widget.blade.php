@@ -1,7 +1,7 @@
-<x-filament-widgets::widget>
+<x-filament-widgets::widget class="h-full">
 
     {{-- ── Widget Card ─────────────────────────────────────────────────────────── --}}
-    <x-filament::section>
+    <x-filament::section class="h-full">
         <x-slot name="heading">
             <div class="flex items-center gap-1.5">
                 <x-heroicon-o-sparkles class="w-4 h-4 text-primary-500" />
