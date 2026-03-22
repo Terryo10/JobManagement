@@ -3,6 +3,7 @@
 namespace App\Filament\Accountant\Resources;
 
 use App\Filament\Accountant\Resources\PurchaseOrderResource\Pages;
+use App\Filament\Forms\Components\SignaturePad;
 use App\Models\PurchaseOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
@@ -133,15 +134,23 @@ class PurchaseOrderResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->button()
-                    ->requiresConfirmation()
+                    ->modalHeading('Finance Approval')
+                    ->modalDescription('Please draw your signature to confirm finance approval. This will be recorded on the requisition PDF.')
+                    ->form([
+                        SignaturePad::make('finance_signature')
+                            ->label('Your Signature')
+                            ->required(),
+                    ])
                     ->visible(fn ($record) => $record->status === 'pending_finance_approval')
-                    ->action(function ($record) {
+                    ->action(function ($record, array $data) {
                         $record->update([
-                            'status'              => 'finance_approved',
-                            'finance_approved_by' => auth()->id(),
+                            'status'                 => 'finance_approved',
+                            'finance_approved_by'    => auth()->id(),
+                            'finance_signature'      => $data['finance_signature'] ?? null,
+                            'finance_signature_date' => now(),
                         ]);
                         Notification::make()
-                            ->title('Approved – sent to Admin for final sign-off.')
+                            ->title('Finance approved — sent to Admin for final sign-off.')
                             ->success()
                             ->send();
                     }),
@@ -151,10 +160,12 @@ class PurchaseOrderResource extends Resource
                     ->color('danger')
                     ->button()
                     ->requiresConfirmation()
+                    ->modalHeading('Reject Requisition')
+                    ->modalDescription('Are you sure you want to reject this requisition? The requester will be notified.')
                     ->visible(fn ($record) => $record->status === 'pending_finance_approval')
                     ->action(function ($record) {
                         $record->update(['status' => 'rejected']);
-                        Notification::make()->title('Requisition rejected.')->warning()->send();
+                        Notification::make()->title('Requisition rejected. Requester has been notified.')->warning()->send();
                     }),
                 Tables\Actions\ViewAction::make()->iconButton(),
                 Tables\Actions\Action::make('downloadPdf')
