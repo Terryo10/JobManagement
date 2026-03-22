@@ -135,6 +135,38 @@ return [
     ],
 
     // -------------------------------------------------------------------------
+    // Approvals — Payment Requisitions
+    // -------------------------------------------------------------------------
+    'requisition.submitted' => [
+        'label'            => 'Requisition Submitted for Finance Approval',
+        'channel_database' => true,
+        'channel_mail'     => true,
+        'channel_sms'      => true,
+        'channel_whatsapp' => false,
+    ],
+    'requisition.finance_approved' => [
+        'label'            => 'Requisition Finance-Approved – Awaiting Admin',
+        'channel_database' => true,
+        'channel_mail'     => true,
+        'channel_sms'      => true,
+        'channel_whatsapp' => false,
+    ],
+    'requisition.approved' => [
+        'label'            => 'Requisition Fully Approved',
+        'channel_database' => true,
+        'channel_mail'     => true,
+        'channel_sms'      => true,
+        'channel_whatsapp' => false,
+    ],
+    'requisition.rejected' => [
+        'label'            => 'Requisition Rejected',
+        'channel_database' => true,
+        'channel_mail'     => true,
+        'channel_sms'      => true,
+        'channel_whatsapp' => false,
+    ],
+
+    // -------------------------------------------------------------------------
     // Approvals — Expenses
     // -------------------------------------------------------------------------
     'expense.submitted' => [

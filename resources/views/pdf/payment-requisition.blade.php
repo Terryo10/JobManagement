@@ -41,6 +41,8 @@
         .signature-sign { display: table-cell; width: 55%; vertical-align: bottom; text-align: left; padding-left: 20px; }
         .signature-sign-label { font-weight: 700; font-size: 11px; text-transform: uppercase; display: inline; }
         .signature-sign-dots { border-bottom: 1px dotted #999; display: inline-block; width: 260px; }
+        .sig-img { height: 48px; max-width: 240px; display: block; margin-bottom: 2px; }
+        .sig-date { font-size: 9px; color: #666; }
 
         /* ── Items Table ── */
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; margin-top: 10px; }
@@ -136,6 +138,7 @@
 
     {{-- ── Signatures ── --}}
     <div class="signature-block">
+        {{-- Requested By --}}
         <div class="signature-row">
             <div class="signature-role">
                 <span class="signature-role-label">REQUESTED BY</span>
@@ -146,24 +149,42 @@
                 <span class="signature-sign-dots">&nbsp;</span>
             </div>
         </div>
+
+        {{-- Finance Reviewed By --}}
         <div class="signature-row">
             <div class="signature-role">
-                <span class="signature-role-label">REVIEWED BY</span>
-                <span class="signature-dots">&nbsp;</span>
+                <span class="signature-role-label">REVIEWED BY (FINANCE)</span>
+                <span class="signature-dots">&nbsp;{{ $purchaseOrder->financeApprovedBy?->name ?? '' }}&nbsp;</span>
+                @if($purchaseOrder->finance_signature_date)
+                    <div class="sig-date">{{ $purchaseOrder->finance_signature_date->format('d M Y H:i') }}</div>
+                @endif
             </div>
             <div class="signature-sign">
                 <span class="signature-sign-label">SIGNATURE</span>
-                <span class="signature-sign-dots">&nbsp;</span>
+                @if($purchaseOrder->finance_signature)
+                    <img src="{{ $purchaseOrder->finance_signature }}" class="sig-img" alt="Finance Signature">
+                @else
+                    <span class="signature-sign-dots">&nbsp;</span>
+                @endif
             </div>
         </div>
+
+        {{-- Authorised By (Admin) --}}
         <div class="signature-row">
             <div class="signature-role">
                 <span class="signature-role-label">AUTHORISED BY</span>
                 <span class="signature-dots">&nbsp;{{ $purchaseOrder->approvedBy?->name ?? '' }}&nbsp;</span>
+                @if($purchaseOrder->admin_signature_date)
+                    <div class="sig-date">{{ $purchaseOrder->admin_signature_date->format('d M Y H:i') }}</div>
+                @endif
             </div>
             <div class="signature-sign">
                 <span class="signature-sign-label">SIGNATURE</span>
-                <span class="signature-sign-dots">&nbsp;</span>
+                @if($purchaseOrder->admin_signature)
+                    <img src="{{ $purchaseOrder->admin_signature }}" class="sig-img" alt="Admin Signature">
+                @else
+                    <span class="signature-sign-dots">&nbsp;</span>
+                @endif
             </div>
         </div>
     </div>

@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\PurchaseOrderResource\Pages;
 use App\Filament\Admin\Resources\PurchaseOrderResource\RelationManagers;
+use App\Filament\Forms\Components\SignaturePad;
 use App\Models\PurchaseOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
@@ -144,15 +145,23 @@ class PurchaseOrderResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->button()
-                    ->requiresConfirmation()
+                    ->modalHeading('Final Approval')
+                    ->modalDescription('Please draw your signature to give final authorisation. This will notify the requester and be recorded on the PDF.')
+                    ->form([
+                        SignaturePad::make('admin_signature')
+                            ->label('Authorisation Signature')
+                            ->required(),
+                    ])
                     ->visible(fn ($record) => $record->status === 'finance_approved')
-                    ->action(function ($record) {
+                    ->action(function ($record, array $data) {
                         $record->update([
-                            'status'      => 'approved',
-                            'approved_by' => auth()->id(),
+                            'status'               => 'approved',
+                            'approved_by'          => auth()->id(),
+                            'admin_signature'      => $data['admin_signature'] ?? null,
+                            'admin_signature_date' => now(),
                         ]);
                         Notification::make()
-                            ->title('Requisition fully approved!')
+                            ->title('Requisition fully approved! Requester has been notified.')
                             ->success()
                             ->send();
                     }),
@@ -162,10 +171,12 @@ class PurchaseOrderResource extends Resource
                     ->color('danger')
                     ->button()
                     ->requiresConfirmation()
+                    ->modalHeading('Reject Requisition')
+                    ->modalDescription('The requester will be notified of this rejection.')
                     ->visible(fn ($record) => in_array($record->status, ['pending_finance_approval', 'finance_approved']))
                     ->action(function ($record) {
                         $record->update(['status' => 'rejected']);
-                        Notification::make()->title('Requisition rejected.')->warning()->send();
+                        Notification::make()->title('Requisition rejected. Requester has been notified.')->warning()->send();
                     }),
                 Tables\Actions\ViewAction::make()->iconButton(),
                 Tables\Actions\EditAction::make()->iconButton(),
@@ -201,7 +212,9 @@ class PurchaseOrderResource extends Resource
                 Infolists\Components\TextEntry::make('status')->badge(),
                 Infolists\Components\TextEntry::make('workOrder.reference_number')->label('Work Order')->placeholder('—'),
                 Infolists\Components\TextEntry::make('financeApprovedBy.name')->label('Finance Approved By')->placeholder('—'),
+                Infolists\Components\TextEntry::make('finance_signature_date')->label('Finance Signed At')->dateTime()->placeholder('—'),
                 Infolists\Components\TextEntry::make('approvedBy.name')->label('Final Approved By')->placeholder('—'),
+                Infolists\Components\TextEntry::make('admin_signature_date')->label('Admin Signed At')->dateTime()->placeholder('—'),
                 Infolists\Components\TextEntry::make('title')->label('Purpose')->columnSpanFull(),
                 Infolists\Components\TextEntry::make('attachment')
                     ->label('Attachment')
