@@ -34,5 +34,6 @@ class AppServiceProvider extends ServiceProvider
         Task::observe(TaskObserver::class);
         StaffAvailability::observe(StaffAvailabilityObserver::class);
         StockLevel::observe(StockLevelObserver::class);
+        \App\Models\PurchaseOrder::observe(\App\Observers\PurchaseOrderObserver::class);
     }
 }

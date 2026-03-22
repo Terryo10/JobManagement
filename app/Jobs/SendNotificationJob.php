@@ -6,7 +6,7 @@ use App\Models\NotificationLog;
 use App\Models\User;
 use App\Notifications\Channels\InfobipSmsChannel;
 use App\Notifications\Channels\InfobipWhatsAppChannel;
-use App\Notifications\Channels\MailChannel;
+use App\Notifications\Channels\InfobipEmailChannel;
 use App\Notifications\NotificationEvent;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -29,7 +29,7 @@ class SendNotificationJob implements ShouldQueue
     ) {}
 
     public function handle(
-        MailChannel             $mail,
+        InfobipEmailChannel     $mail,
         InfobipSmsChannel       $sms,
         InfobipWhatsAppChannel  $whatsapp,
     ): void {

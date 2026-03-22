@@ -22,6 +22,9 @@ class InfobipSmsChannel implements NotificationChannelContract
             return;
         }
 
+        // Sanitize phone to E.164 format (keep only + and digits)
+        $phone = preg_replace('/[^\d+]/', '', $phone);
+
         $text = strip_tags("{$event->title}\n{$event->body}");
 
         try {

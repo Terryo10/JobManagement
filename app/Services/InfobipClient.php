@@ -83,4 +83,30 @@ class InfobipClient
             ->throw()
             ->json();
     }
+    /**
+     * Send an email message via Infobip API.
+     */
+    public function sendEmail(string $to, string $subject, string $htmlBody): array
+    {
+        return $this->http->post('/email/4/messages', [
+            'messages' => [
+                [
+                    'destinations' => [
+                        [
+                            'to' => [
+                                ['destination' => $to]
+                            ]
+                        ]
+                    ],
+                    'sender' => config('services.infobip.email_sender', config('mail.from.address')),
+                    'content' => [
+                        'subject' => $subject,
+                        'html'    => $htmlBody,
+                    ]
+                ]
+            ]
+        ])
+        ->throw()
+        ->json();
+    }
 }

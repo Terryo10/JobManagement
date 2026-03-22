@@ -36,6 +36,7 @@ return [
     'infobip' => [
         'base_url'          => env('INFOBIP_BASE_URL'),
         'api_key'           => env('INFOBIP_API_KEY'),
+        'email_sender'      => env('INFOBIP_EMAIL_SENDER', env('MAIL_FROM_ADDRESS')),
         'sms_sender'        => env('INFOBIP_SMS_SENDER', 'JobMgmt'),
         'whatsapp_sender'   => env('INFOBIP_WHATSAPP_SENDER'),
     ],
