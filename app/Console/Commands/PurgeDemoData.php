@@ -113,6 +113,10 @@ class PurgeDemoData extends Command
             ['label' => 'Clients',                      'count' => DB::table('clients')->count()],
             ['label' => 'Materials',                    'count' => DB::table('materials')->count()],
             ['label' => 'Suppliers',                    'count' => DB::table('suppliers')->count()],
+            ['label' => 'Expenses (by demo users)',       'count' => DB::table('expenses')->whereIn('submitted_by', $demoUserIds)->count()],
+            ['label' => 'Financial approvals (by demo)', 'count' => DB::table('financial_approvals')->whereIn('requested_by', $demoUserIds)->count()],
+            ['label' => 'Deadline escalations (to demo)','count' => DB::table('deadline_escalations')->whereIn('escalated_to', $demoUserIds)->count()],
+            ['label' => 'Documents (uploaded by demo users)', 'count' => DB::table('documents')->whereIn('uploaded_by', $demoUserIds)->count()],
             ['label' => 'Personal file shares',         'count' => DB::table('personal_file_shares')->whereIn('personal_file_id', $fileIds)->count()],
             ['label' => 'Personal files (demo users)',  'count' => (int) $fileIds->count()],
             ['label' => 'Notification preferences',     'count' => DB::table('notification_preferences')->whereIn('user_id', $demoUserIds)->count()],
@@ -188,6 +192,11 @@ class PurgeDemoData extends Command
             $this->step('Suppliers',            DB::table('suppliers')->delete());
 
             // ── Demo users & their data ───────────────────────────────────────
+            // All tables below have NOT NULL + restrictOnDelete referencing users — must purge before deleting users
+            $this->step('Expenses (submitted by demo users)',      DB::table('expenses')->whereIn('submitted_by', $demoUserIds)->delete());
+            $this->step('Financial approvals (by demo users)',     DB::table('financial_approvals')->whereIn('requested_by', $demoUserIds)->delete());
+            $this->step('Deadline escalations (to demo users)',    DB::table('deadline_escalations')->whereIn('escalated_to', $demoUserIds)->delete());
+            $this->step('Documents (uploaded by demo users)',      DB::table('documents')->whereIn('uploaded_by', $demoUserIds)->delete());
             $this->step('Personal file shares',     DB::table('personal_file_shares')->whereIn('personal_file_id', $fileIds)->delete());
             $this->step('Personal files',           DB::table('personal_files')->whereIn('user_id', $demoUserIds)->delete());
             $this->step('Notification preferences', DB::table('notification_preferences')->whereIn('user_id', $demoUserIds)->delete());
