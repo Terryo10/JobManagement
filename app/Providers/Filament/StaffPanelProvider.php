@@ -45,7 +45,16 @@ class StaffPanelProvider extends PanelProvider
             ->readOnlyRelationManagersOnResourceViewPagesByDefault(false)
             ->discoverResources(in: app_path('Filament/Staff/Resources'), for: 'App\\Filament\\Staff\\Resources')
             ->discoverPages(in: app_path('Filament/Staff/Pages'), for: 'App\\Filament\\Staff\\Pages')
-            ->pages([Pages\Dashboard::class])
+            ->pages([
+                Pages\Dashboard::class,
+                \App\Filament\Pages\MyNotificationPreferences::class,
+            ])
+            ->userMenuItems([
+                \Filament\Navigation\MenuItem::make()
+                    ->label('Notification Preferences')
+                    ->url(fn (): string => \App\Filament\Pages\MyNotificationPreferences::getUrl())
+                    ->icon('heroicon-o-bell-alert'),
+            ])
             ->discoverWidgets(in: app_path('Filament/Staff/Widgets'), for: 'App\\Filament\\Staff\\Widgets')
             ->widgets([])
             ->middleware([

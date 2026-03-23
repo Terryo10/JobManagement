@@ -7,6 +7,9 @@
             initPad() {
                 const canvas = this.$refs.sigCanvas;
                 this.pad = new SignaturePad(canvas, { backgroundColor: 'rgb(255, 255, 255)' });
+                this.pad.addEventListener('endStroke', () => {
+                    this.save();
+                });
                 if (this.state) {
                     this.pad.fromDataURL(this.state);
                 }
@@ -19,7 +22,9 @@
                 }
                 const s = document.createElement('script');
                 s.src = 'https://cdn.jsdelivr.net/npm/signature_pad@4/dist/signature_pad.umd.min.js';
-                s.onload = () => this.initPad();
+                s.onload = () => {
+                    this.initPad();
+                };
                 document.head.appendChild(s);
             },
             save() {
@@ -41,8 +46,6 @@
                 width="540"
                 height="160"
                 style="width: 100%; display: block; cursor: crosshair;"
-                @mouseup="save()"
-                @touchend="save()"
             ></canvas>
         </div>
 

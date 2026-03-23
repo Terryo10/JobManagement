@@ -54,15 +54,17 @@ class WorkOrderObserver
 
         // Job released
         if ($workOrder->isDirty('claimed_by') && ! $workOrder->claimed_by && $workOrder->getOriginal('claimed_by')) {
-            $releasedBy = User::find($workOrder->getOriginal('claimed_by'));
+            $releasedById = $workOrder->getOriginal('claimed_by');
+            $releasedBy = User::find($releasedById);
 
             $router->dispatch(new NotificationEvent(
                 type:           'work_order.released',
                 title:          'Job Released',
-                body:           "{$workOrder->reference_number} was released by {$releasedBy?->name}",
+                body:           "{$workOrder->reference_number} was successfully released back to the queue.",
                 icon:           'heroicon-o-arrow-uturn-left',
                 color:          'warning',
                 recipientRoles: ['manager', 'super_admin'],
+                recipientUserIds: [$releasedById],
                 subjectType:    WorkOrder::class,
                 subjectId:      $workOrder->id,
             ));
@@ -72,16 +74,23 @@ class WorkOrderObserver
         if ($workOrder->isDirty('claimed_by') && $workOrder->claimed_by) {
             $assignee    = User::find($workOrder->claimed_by);
             $isSelfClaim = auth()->check() && auth()->id() === (int) $workOrder->claimed_by;
+            
+            $recipientRoles = ['super_admin'];
+            $recipientUserIds = [];
+            if (!$isSelfClaim) {
+                $recipientUserIds[] = $workOrder->claimed_by;
+            }
 
             $router->dispatch(new NotificationEvent(
                 type:           $isSelfClaim ? 'work_order.claimed' : 'work_order.assigned',
-                title:          $isSelfClaim ? 'Job Claimed' : 'Job Assigned',
+                title:          $isSelfClaim ? 'Job Claimed' : 'Job Assigned to You',
                 body:           $isSelfClaim
                     ? "{$workOrder->reference_number} was claimed by {$assignee?->name}"
-                    : "{$workOrder->reference_number} assigned to {$assignee?->name}",
+                    : "{$workOrder->reference_number} has been assigned to you.",
                 icon:           $isSelfClaim ? 'heroicon-o-hand-raised' : 'heroicon-o-user-plus',
                 color:          'info',
-                recipientRoles: ['super_admin'],
+                recipientRoles: $recipientRoles,
+                recipientUserIds: $recipientUserIds,
                 subjectType:    WorkOrder::class,
                 subjectId:      $workOrder->id,
             ));

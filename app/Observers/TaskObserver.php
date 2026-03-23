@@ -42,10 +42,11 @@ class TaskObserver
                 $router->dispatch(new NotificationEvent(
                     type:           'task.released',
                     title:          'Task Released',
-                    body:           "Task \"{$task->title}\" was released by {$oldClaimedBy?->name}",
+                    body:           "Task \"{$task->title}\" was successfully released back to the queue.",
                     icon:           'heroicon-o-arrow-uturn-left',
                     color:          'warning',
                     recipientRoles: ['manager', 'super_admin'],
+                    recipientUserIds: [$oldClaimedByUserId],
                     subjectType:    Task::class,
                     subjectId:      $task->id,
                 ));
@@ -70,15 +71,22 @@ class TaskObserver
             $assignee    = User::find($task->claimed_by);
             $isSelfClaim = auth()->check() && auth()->id() === (int) $task->claimed_by;
 
+            $recipientRoles = ['super_admin'];
+            $recipientUserIds = [];
+            if (!$isSelfClaim) {
+                $recipientUserIds[] = $task->claimed_by;
+            }
+
             $router->dispatch(new NotificationEvent(
                 type:           $isSelfClaim ? 'task.claimed' : 'task.claimed_assigned',
-                title:          $isSelfClaim ? 'Task Claimed' : 'Task Assigned',
+                title:          $isSelfClaim ? 'Task Claimed' : 'Task Assigned to You',
                 body:           $isSelfClaim
                     ? "\"{$task->title}\" was claimed by {$assignee?->name}"
-                    : "\"{$task->title}\" assigned to {$assignee?->name}",
+                    : "You have been assigned to: \"{$task->title}\"",
                 icon:           $isSelfClaim ? 'heroicon-o-hand-raised' : 'heroicon-o-user-plus',
                 color:          'info',
-                recipientRoles: ['super_admin'],
+                recipientRoles: $recipientRoles,
+                recipientUserIds: $recipientUserIds,
                 subjectType:    Task::class,
                 subjectId:      $task->id,
             ));

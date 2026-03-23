@@ -139,10 +139,18 @@ class PurchaseOrderResource extends Resource
                     ->form([
                         SignaturePad::make('finance_signature')
                             ->label('Your Signature')
+                            ->default(fn () => auth()->user()->saved_signature)
                             ->required(),
+                        Forms\Components\Checkbox::make('save_signature')
+                            ->label('Save this signature for future use')
+                            ->default(fn () => empty(auth()->user()->saved_signature)),
                     ])
                     ->visible(fn ($record) => $record->status === 'pending_finance_approval')
                     ->action(function ($record, array $data) {
+                        if ($data['save_signature'] ?? false) {
+                            auth()->user()->update(['saved_signature' => $data['finance_signature']]);
+                        }
+
                         $record->update([
                             'status'                 => 'finance_approved',
                             'finance_approved_by'    => auth()->id(),

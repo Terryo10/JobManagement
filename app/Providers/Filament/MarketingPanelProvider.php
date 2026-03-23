@@ -42,7 +42,16 @@ class MarketingPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Marketing/Resources'), for: 'App\\Filament\\Marketing\\Resources')
             ->discoverPages(in: app_path('Filament/Marketing/Pages'), for: 'App\\Filament\\Marketing\\Pages')
-            ->pages([Pages\Dashboard::class])
+            ->pages([
+                Pages\Dashboard::class,
+                \App\Filament\Pages\MyNotificationPreferences::class,
+            ])
+            ->userMenuItems([
+                \Filament\Navigation\MenuItem::make()
+                    ->label('Notification Preferences')
+                    ->url(fn (): string => \App\Filament\Pages\MyNotificationPreferences::getUrl())
+                    ->icon('heroicon-o-bell-alert'),
+            ])
             ->discoverWidgets(in: app_path('Filament/Marketing/Widgets'), for: 'App\\Filament\\Marketing\\Widgets')
             ->widgets([])
             ->plugin(\Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::make())
