@@ -14,9 +14,9 @@ class AdminUserSeeder extends Seeder
         Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
 
         $user = User::firstOrCreate(
-            ['email' => 'michaeltereral@gmail.com'],
+            ['email' => 'michaeltererai@gmail.com'],
             [
-                'name'             => 'Michael Tereral',
+                'name'             => 'Michael Tererai',
                 'password'         => Hash::make('password'),
                 'phone_number'     => '+27762562799',
                 'whatsapp_number'  => '+27762562799',
@@ -26,7 +26,7 @@ class AdminUserSeeder extends Seeder
 
         $user->assignRole('super_admin');
 
-        $this->command->info("✅ User ready: {$user->email} — role: super_admin");
+        $this->command->info("✅  User ready: {$user->email} — role: super_admin");
         $this->command->warn('   Remember to set a strong password after first login.');
     }
 }
