@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AdminTask;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\StockLevel;
@@ -21,11 +22,12 @@ class AiReportService
     private string $apiUrl;
 
     private const TOPIC_LABELS = [
-        'work_orders' => 'Work Orders & Job Operations',
-        'finance'     => 'Finance & Invoices',
-        'staff'       => 'Staff Activity & Performance',
-        'crm'         => 'CRM, Leads & Proposals',
-        'inventory'   => 'Inventory & Stock Levels',
+        'work_orders'  => 'Work Orders & Job Operations',
+        'finance'      => 'Finance & Invoices',
+        'staff'        => 'Staff Activity & Performance',
+        'crm'          => 'CRM, Leads & Proposals',
+        'inventory'    => 'Inventory & Stock Levels',
+        'admin_tasks'  => 'Admin Tasks & Internal Actions',
     ];
 
     public function __construct()
@@ -97,6 +99,7 @@ PROMPT;
             'staff'       => $this->fetchStaffData(),
             'crm'         => $this->fetchCrmData(),
             'inventory'   => $this->fetchInventoryData(),
+            'admin_tasks' => $this->fetchAdminTaskData(),
             default       => [],
         };
     }
@@ -361,6 +364,65 @@ PROMPT;
             'low_stock_count' => count($lowStock),
             'purchase_orders' => $poByStatus,
             'recent_pos'      => $recentPOs,
+        ];
+    }
+
+    private function fetchAdminTaskData(): array
+    {
+        $now = now();
+
+        $byStatus = AdminTask::selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $byCategory = AdminTask::selectRaw('category, count(*) as count')
+            ->groupBy('category')
+            ->pluck('count', 'category')
+            ->toArray();
+
+        $overdue = AdminTask::whereNotNull('due_date')
+            ->where('due_date', '<', $now)
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->count();
+
+        $urgent = AdminTask::whereNotIn('status', ['completed', 'cancelled'])
+            ->where('priority', 'urgent')
+            ->count();
+
+        $completedThisWeek = AdminTask::where('status', 'completed')
+            ->where('completed_at', '>=', $now->copy()->startOfWeek())
+            ->count();
+
+        $open = AdminTask::whereNotIn('status', ['completed', 'cancelled'])
+            ->with('assignedTo:id,name')
+            ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END")
+            ->orderBy('due_date')
+            ->limit(20)
+            ->get()
+            ->map(fn ($t) => [
+                'title'       => $t->title,
+                'category'    => $t->category,
+                'status'      => $t->status,
+                'priority'    => $t->priority,
+                'assigned_to' => $t->assignedTo?->name ?? 'Unassigned',
+                'due_date'    => $t->due_date?->format('Y-m-d'),
+                'overdue'     => $t->isOverdue(),
+            ])->toArray();
+
+        $unassigned = AdminTask::whereNull('assigned_to')
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->count();
+
+        return [
+            'as_of'               => $now->toDateTimeString(),
+            'totals_by_status'    => $byStatus,
+            'totals_by_category'  => $byCategory,
+            'overdue_count'       => $overdue,
+            'urgent_count'        => $urgent,
+            'unassigned_count'    => $unassigned,
+            'completed_this_week' => $completedThisWeek,
+            'open_tasks'          => $open,
         ];
     }
 

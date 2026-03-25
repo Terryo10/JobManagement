@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Models\AdminTask;
 use App\Models\StaffAvailability;
 use App\Models\Task;
 use App\Models\User;
@@ -160,6 +161,45 @@ class AdminCalendarWidget extends FullCalendarWidget
                 ];
             });
 
+        // --- Admin Tasks ---
+        AdminTask::whereNotNull('due_date')
+            ->where('due_date', '>=', $info['start'])
+            ->where('due_date', '<=', $info['end'])
+            ->whereNotIn('status', ['cancelled'])
+            ->with('assignedTo:id,name')
+            ->get()
+            ->each(function (AdminTask $adminTask) use (&$events) {
+                $color = match ($adminTask->priority) {
+                    'urgent' => '#dc2626', // red
+                    'high'   => '#ea580c', // orange-red
+                    'normal' => '#7c3aed', // violet
+                    default  => '#6b7280', // gray
+                };
+
+                $assigneeName = $adminTask->assignedTo?->name ?? 'Unassigned';
+                $start = $adminTask->start_date?->toDateString() ?? $adminTask->due_date->toDateString();
+                $end   = $adminTask->due_date->copy()->addDay()->toDateString();
+
+                $events[] = [
+                    'id'              => 'admin-task-' . $adminTask->id,
+                    'title'           => '🔐 ' . $adminTask->title . ' (' . $assigneeName . ')',
+                    'start'           => $start,
+                    'end'             => $end,
+                    'allDay'          => true,
+                    'backgroundColor' => $color,
+                    'borderColor'     => $color,
+                    'textColor'       => '#ffffff',
+                    'url'             => $this->adminTaskEditUrl($adminTask->id),
+                    'extendedProps'   => [
+                        'type'     => 'admin_task',
+                        'category' => $adminTask->category,
+                        'assignee' => $assigneeName,
+                        'status'   => $adminTask->status,
+                        'priority' => $adminTask->priority,
+                    ],
+                ];
+            });
+
         return $events;
     }
 
@@ -195,6 +235,15 @@ class AdminCalendarWidget extends FullCalendarWidget
     {
         try {
             return route('filament.admin.resources.work-orders.edit', $id);
+        } catch (\Exception) {
+            return null;
+        }
+    }
+
+    private function adminTaskEditUrl(int $id): ?string
+    {
+        try {
+            return route('filament.admin.resources.admin-tasks.edit', $id);
         } catch (\Exception) {
             return null;
         }

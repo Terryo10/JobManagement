@@ -21,11 +21,12 @@ class AiAssistantWidget extends Widget
     public static function getTopics(): array
     {
         return [
-            'work_orders' => ['label' => 'Work Orders', 'icon' => 'heroicon-o-clipboard-document-list'],
-            'finance'     => ['label' => 'Finance',     'icon' => 'heroicon-o-banknotes'],
-            'staff'       => ['label' => 'Staff',       'icon' => 'heroicon-o-users'],
-            'crm'         => ['label' => 'CRM & Leads', 'icon' => 'heroicon-o-user-group'],
-            'inventory'   => ['label' => 'Inventory',   'icon' => 'heroicon-o-archive-box'],
+            'work_orders' => ['label' => 'Work Orders',  'icon' => 'heroicon-o-clipboard-document-list'],
+            'finance'     => ['label' => 'Finance',      'icon' => 'heroicon-o-banknotes'],
+            'staff'       => ['label' => 'Staff',        'icon' => 'heroicon-o-users'],
+            'crm'         => ['label' => 'CRM & Leads',  'icon' => 'heroicon-o-user-group'],
+            'inventory'   => ['label' => 'Inventory',    'icon' => 'heroicon-o-archive-box'],
+            'admin_tasks' => ['label' => 'Admin Tasks',  'icon' => 'heroicon-o-clipboard-document-check'],
         ];
     }
 

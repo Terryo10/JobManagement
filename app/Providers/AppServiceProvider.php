@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\AdminTask;
 use App\Models\Expense;
 use App\Models\PurchaseOrder;
 use App\Models\StaffAvailability;
@@ -9,6 +10,7 @@ use App\Models\StockLevel;
 use App\Models\Task;
 use App\Models\WorkOrder;
 use App\Notifications\Channels\FilamentDatabaseChannel;
+use App\Observers\AdminTaskObserver;
 use App\Observers\ExpenseObserver;
 use App\Observers\PurchaseOrderObserver;
 use App\Observers\StaffAvailabilityObserver;
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        AdminTask::observe(AdminTaskObserver::class);
         WorkOrder::observe(WorkOrderObserver::class);
         Task::observe(TaskObserver::class);
         StaffAvailability::observe(StaffAvailabilityObserver::class);

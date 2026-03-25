@@ -235,6 +235,45 @@ return [
     ],
 
     // -------------------------------------------------------------------------
+    // Admin Tasks
+    // -------------------------------------------------------------------------
+    'admin_task.assigned' => [
+        'label'            => 'Admin Task Assigned to You',
+        'channel_database' => true,
+        'channel_mail'     => false,
+        'channel_sms'      => false,
+        'channel_whatsapp' => false,
+    ],
+    'admin_task.status_changed' => [
+        'label'            => 'Admin Task Status Changed',
+        'channel_database' => true,
+        'channel_mail'     => false,
+        'channel_sms'      => false,
+        'channel_whatsapp' => false,
+    ],
+    'admin_task.completed' => [
+        'label'            => 'Admin Task Completed',
+        'channel_database' => true,
+        'channel_mail'     => false,
+        'channel_sms'      => false,
+        'channel_whatsapp' => false,
+    ],
+    'admin_task.urgent' => [
+        'label'            => 'Admin Task Escalated to Urgent',
+        'channel_database' => true,
+        'channel_mail'     => false,
+        'channel_sms'      => false,
+        'channel_whatsapp' => false,
+    ],
+    'admin_task.overdue' => [
+        'label'            => 'Admin Task Overdue',
+        'channel_database' => true,
+        'channel_mail'     => false,
+        'channel_sms'      => false,
+        'channel_whatsapp' => false,
+    ],
+
+    // -------------------------------------------------------------------------
     // Stock / Procurement
     // -------------------------------------------------------------------------
     'stock.low' => [
