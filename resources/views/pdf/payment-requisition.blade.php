@@ -113,6 +113,12 @@
         <div class="form-label">Reference No.</div>
         <div class="form-value">{{ $purchaseOrder->reference_number }}</div>
     </div>
+    @if($purchaseOrder->gl_account)
+    <div class="form-row">
+        <div class="form-label">GL Account</div>
+        <div class="form-value">{{ $purchaseOrder->gl_account }}{{ $purchaseOrder->gl_account_name ? ' — ' . $purchaseOrder->gl_account_name : '' }}</div>
+    </div>
+    @endif
 
     {{-- ── Details of Payment ── --}}
     <div class="section-label">Details of Payment:</div>

@@ -37,6 +37,14 @@ class PurchaseOrderResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
+                Forms\Components\TextInput::make('gl_account')
+                    ->label('GL Account Code')
+                    ->placeholder('e.g. 5010')
+                    ->maxLength(50),
+                Forms\Components\TextInput::make('gl_account_name')
+                    ->label('GL Account Name')
+                    ->placeholder('e.g. Marketing Expenses')
+                    ->maxLength(150),
                 Forms\Components\TextInput::make('total_amount')
                     ->label('Amount Requested')
                     ->numeric()
@@ -99,6 +107,10 @@ class PurchaseOrderResource extends Resource
                     ->label('Work Order')
                     ->searchable()
                     ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('gl_account')
+                    ->label('GL Account')
+                    ->formatStateUsing(fn ($state, $record) => $state ? "{$state} — {$record->gl_account_name}" : '—')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('orderedBy.name')
                     ->label('Requested By'),
@@ -223,6 +235,10 @@ class PurchaseOrderResource extends Resource
                 Infolists\Components\TextEntry::make('finance_signature_date')->label('Finance Signed At')->dateTime()->placeholder('—'),
                 Infolists\Components\TextEntry::make('approvedBy.name')->label('Final Approved By')->placeholder('—'),
                 Infolists\Components\TextEntry::make('admin_signature_date')->label('Admin Signed At')->dateTime()->placeholder('—'),
+                Infolists\Components\TextEntry::make('gl_account')
+                    ->label('GL Account')
+                    ->formatStateUsing(fn ($state, $record) => $state ? "{$state} — {$record->gl_account_name}" : '—')
+                    ->placeholder('—'),
                 Infolists\Components\TextEntry::make('title')->label('Purpose')->columnSpanFull(),
                 Infolists\Components\TextEntry::make('attachment')
                     ->label('Attachment')

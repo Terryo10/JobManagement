@@ -10,9 +10,11 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class WorkOrderResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = WorkOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'Work Orders';

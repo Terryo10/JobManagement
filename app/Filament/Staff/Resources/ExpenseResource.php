@@ -12,9 +12,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class ExpenseResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = Expense::class;
     protected static ?string $navigationIcon = 'heroicon-o-receipt-percent';
     protected static ?string $navigationLabel = 'My Expenses';

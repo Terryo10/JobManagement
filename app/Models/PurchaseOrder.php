@@ -17,6 +17,7 @@ class PurchaseOrder extends Model
         'work_order_id', 'attachment',
         'finance_signature', 'finance_signature_date',
         'admin_signature', 'admin_signature_date',
+        'gl_account', 'gl_account_name',
     ];
 
     protected function casts(): array

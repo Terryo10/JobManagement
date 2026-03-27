@@ -9,9 +9,11 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class SafetyComplianceRecordResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = SafetyComplianceRecord::class;
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationLabel = 'Safety Checklists';

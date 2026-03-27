@@ -10,9 +10,11 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class EquipmentResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = Equipment::class;
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
     protected static ?string $navigationLabel = 'Equipment';

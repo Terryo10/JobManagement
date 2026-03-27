@@ -9,9 +9,11 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class BusinessReportResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = BusinessReport::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
     protected static ?string $navigationGroup = 'Reports';

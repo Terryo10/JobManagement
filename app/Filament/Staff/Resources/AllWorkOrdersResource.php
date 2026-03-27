@@ -12,9 +12,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class AllWorkOrdersResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = WorkOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-briefcase';
     protected static ?string $navigationLabel = 'All Work Orders';

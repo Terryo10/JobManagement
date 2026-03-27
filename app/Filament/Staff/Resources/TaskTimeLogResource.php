@@ -10,9 +10,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class TaskTimeLogResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = TaskTimeLog::class;
     protected static ?string $navigationIcon = 'heroicon-o-clock';
     protected static ?string $navigationLabel = 'My Time Logs';

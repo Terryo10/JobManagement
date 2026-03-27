@@ -14,9 +14,11 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class AnnouncementResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = Announcement::class;
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
     protected static ?string $navigationLabel = 'Announcements';

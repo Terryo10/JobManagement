@@ -16,9 +16,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Mail;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class InvoiceResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = Invoice::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-currency-dollar';
     protected static ?string $navigationLabel = 'Invoices';
@@ -73,6 +75,9 @@ class InvoiceResource extends Resource
                             Forms\Components\TextInput::make('quantity')
                                 ->numeric()->default(1)->required()->live(onBlur: true)
                                 ->afterStateUpdated(function (\Filament\Forms\Get $get, \Filament\Forms\Set $set) {
+                                    $qty = (float) ($get('quantity') ?? 0);
+                                    $price = (float) ($get('unit_price') ?? 0);
+                                    $set('total', round($qty * $price, 2));
                                     $items = $get('../../items') ?? [];
                                     $subtotal = collect($items)->reduce(fn ($carry, $item) => $carry + ((float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0)), 0);
                                     $set('../../subtotal', number_format($subtotal, 2, '.', ''));
@@ -85,6 +90,9 @@ class InvoiceResource extends Resource
                             Forms\Components\TextInput::make('unit_price')
                                 ->numeric()->required()->live(onBlur: true)
                                 ->afterStateUpdated(function (\Filament\Forms\Get $get, \Filament\Forms\Set $set) {
+                                    $qty = (float) ($get('quantity') ?? 0);
+                                    $price = (float) ($get('unit_price') ?? 0);
+                                    $set('total', round($qty * $price, 2));
                                     $items = $get('../../items') ?? [];
                                     $subtotal = collect($items)->reduce(fn ($carry, $item) => $carry + ((float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0)), 0);
                                     $set('../../subtotal', number_format($subtotal, 2, '.', ''));
@@ -93,6 +101,7 @@ class InvoiceResource extends Resource
                                     $set('../../tax_amount', number_format($taxAmount, 2, '.', ''));
                                     $set('../../total', number_format($subtotal + $taxAmount, 2, '.', ''));
                                 }),
+                            Forms\Components\Hidden::make('total')->default(0)->dehydrated(),
                         ])
                         ->columns(4)->live(onBlur: true)
                         ->afterStateUpdated(function (\Filament\Forms\Get $get, \Filament\Forms\Set $set) {

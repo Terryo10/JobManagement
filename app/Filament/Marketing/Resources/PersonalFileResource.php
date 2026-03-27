@@ -4,6 +4,7 @@ namespace App\Filament\Marketing\Resources;
 
 use App\Filament\Marketing\Resources\PersonalFileResource\Pages;
 use App\Filament\Shared\Resources\BasePersonalFileResource;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class PersonalFileResource extends BasePersonalFileResource
 {

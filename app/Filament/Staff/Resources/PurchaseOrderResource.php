@@ -14,9 +14,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class PurchaseOrderResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = PurchaseOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationLabel = 'Requisitions';
@@ -41,6 +43,14 @@ class PurchaseOrderResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
+                Forms\Components\TextInput::make('gl_account')
+                    ->label('GL Account Code')
+                    ->placeholder('e.g. 5010')
+                    ->maxLength(50),
+                Forms\Components\TextInput::make('gl_account_name')
+                    ->label('GL Account Name')
+                    ->placeholder('e.g. Office Expenses')
+                    ->maxLength(150),
                 Forms\Components\TextInput::make('total_amount')
                     ->label('Amount Requested')
                     ->numeric()
@@ -90,6 +100,10 @@ class PurchaseOrderResource extends Resource
                     ->label('Work Order')
                     ->searchable()
                     ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('gl_account')
+                    ->label('GL Account')
+                    ->formatStateUsing(fn ($state, $record) => $state ? "{$state} — {$record->gl_account_name}" : '—')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Amount')
@@ -165,6 +179,10 @@ class PurchaseOrderResource extends Resource
                     }),
                 Infolists\Components\TextEntry::make('workOrder.reference_number')->label('Work Order')->placeholder('—'),
                 Infolists\Components\TextEntry::make('total_amount')->label('Amount Requested')->money('usd'),
+                Infolists\Components\TextEntry::make('gl_account')
+                    ->label('GL Account')
+                    ->formatStateUsing(fn ($state, $record) => $state ? "{$state} — {$record->gl_account_name}" : '—')
+                    ->placeholder('—'),
                 Infolists\Components\TextEntry::make('title')->label('Purpose')->columnSpanFull(),
                 Infolists\Components\TextEntry::make('attachment')
                     ->label('Attachment')

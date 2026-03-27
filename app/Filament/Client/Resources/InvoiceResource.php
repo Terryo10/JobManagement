@@ -12,9 +12,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class InvoiceResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = Invoice::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-currency-dollar';
     protected static ?string $navigationLabel = 'My Invoices';

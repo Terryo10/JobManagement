@@ -11,9 +11,11 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class TaskResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = Task::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-check-circle';

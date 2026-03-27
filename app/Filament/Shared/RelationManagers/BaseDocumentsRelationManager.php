@@ -31,12 +31,14 @@ abstract class BaseDocumentsRelationManager extends RelationManager
                 ->required()
                 ->maxLength(255),
             Forms\Components\FileUpload::make('file_path')
-                ->label('File')
+                ->label('File(s)')
                 ->disk('contabo')
                 ->directory($this->storageDirectory)
                 ->visibility('private')
                 ->acceptedFileTypes($this->allowedTypes ?: DocumentFileTypes::all())
                 ->maxSize($this->maxFileSizeKB)
+                ->multiple()
+                ->reorderable()
                 ->required()
                 ->columnSpanFull(),
             Forms\Components\TagsInput::make('tags')->columnSpanFull(),
@@ -56,12 +58,38 @@ abstract class BaseDocumentsRelationManager extends RelationManager
             ->defaultSort('created_at', 'desc')
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->mutateFormDataUsing(function (array $data): array {
-                        $data['uploaded_by'] = auth()->id();
-                        if (isset($data['file_path'])) {
-                            $data['mime_type'] = pathinfo($data['file_path'], PATHINFO_EXTENSION);
+                    ->using(function (array $data, string $model): \Illuminate\Database\Eloquent\Model {
+                        $owner     = $this->getOwnerRecord();
+                        $filePaths = (array) ($data['file_path'] ?? []);
+                        $tags      = $data['tags'] ?? [];
+                        $notes     = $data['notes'] ?? null;
+                        $first     = null;
+
+                        foreach ($filePaths as $path) {
+                            $ext  = pathinfo($path, PATHINFO_EXTENSION);
+                            $name = count($filePaths) === 1
+                                ? ($data['name'] ?? pathinfo($path, PATHINFO_FILENAME))
+                                : pathinfo($path, PATHINFO_FILENAME);
+
+                            $doc = $owner->documents()->create([
+                                'name'        => $name,
+                                'file_path'   => $path,
+                                'mime_type'   => $ext,
+                                'tags'        => $tags,
+                                'notes'       => $notes,
+                                'uploaded_by' => auth()->id(),
+                            ]);
+
+                            $first ??= $doc;
                         }
-                        return $data;
+
+                        // Fallback (should never hit in normal use)
+                        return $first ?? $owner->documents()->make([
+                            'name'        => $data['name'] ?? 'Untitled',
+                            'file_path'   => '',
+                            'mime_type'   => '',
+                            'uploaded_by' => auth()->id(),
+                        ]);
                     }),
             ])
             ->actions([

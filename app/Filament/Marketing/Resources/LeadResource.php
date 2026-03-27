@@ -9,9 +9,11 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class LeadResource extends Resource
 {
+    use EnforcesAdminDelete;
     protected static ?string $model = Lead::class;
     protected static ?string $navigationIcon = 'heroicon-o-funnel';
     protected static ?string $navigationGroup = 'Pipeline';

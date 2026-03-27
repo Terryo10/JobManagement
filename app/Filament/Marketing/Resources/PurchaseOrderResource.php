@@ -1,0 +1,200 @@
+<?php
+
+namespace App\Filament\Marketing\Resources;
+
+use App\Filament\Marketing\Resources\PurchaseOrderResource\Pages;
+use App\Models\PurchaseOrder;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
+
+class PurchaseOrderResource extends Resource
+{
+    use EnforcesAdminDelete;
+    protected static ?string $model = PurchaseOrder::class;
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationLabel = 'Requisitions';
+    protected static ?string $breadcrumb = 'Requisitions';
+    protected static ?string $pluralLabel = 'Requisitions';
+    protected static ?string $modelLabel = 'Requisition';
+    protected static ?int $navigationSort = 5;
+    protected static ?string $navigationGroup = 'Finance';
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('ordered_by', auth()->id());
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([
+            Forms\Components\Section::make()->schema([
+                Forms\Components\TextInput::make('title')
+                    ->label('What do you need the money for?')
+                    ->placeholder('e.g. Campaign banners for April')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
+                Forms\Components\TextInput::make('gl_account')
+                    ->label('GL Account Code')
+                    ->placeholder('e.g. 6020')
+                    ->maxLength(50),
+                Forms\Components\TextInput::make('gl_account_name')
+                    ->label('GL Account Name')
+                    ->placeholder('e.g. Marketing Expenses')
+                    ->maxLength(150),
+                Forms\Components\TextInput::make('total_amount')
+                    ->label('Amount Requested')
+                    ->numeric()
+                    ->prefix('$')
+                    ->required()
+                    ->default(0),
+                Forms\Components\TextInput::make('reference_number')
+                    ->required()
+                    ->maxLength(50)
+                    ->unique(ignoreRecord: true)
+                    ->default(fn () => 'REQ-' . now()->format('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT)),
+                Forms\Components\Select::make('work_order_id')
+                    ->relationship('workOrder', 'reference_number')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
+                    ->searchable()
+                    ->preload()
+                    ->label('Link to Work Order')
+                    ->columnSpanFull(),
+                Forms\Components\FileUpload::make('attachment')
+                    ->label('Attachment (Optional)')
+                    ->directory('requisition-attachments')
+                    ->columnSpanFull(),
+                Forms\Components\Textarea::make('notes')
+                    ->label('Additional Notes')
+                    ->rows(3)
+                    ->columnSpanFull(),
+                // Hidden fields auto-filled
+                Forms\Components\Hidden::make('status')->default('draft'),
+                Forms\Components\Hidden::make('ordered_by')->default(fn () => auth()->id()),
+            ])->columns(2),
+        ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('reference_number')
+                    ->label('Reference')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('title')
+                    ->label('Purpose')
+                    ->searchable()
+                    ->wrap(),
+                Tables\Columns\TextColumn::make('gl_account')
+                    ->label('GL Account')
+                    ->formatStateUsing(fn ($state, $record) => $state ? "{$state} — {$record->gl_account_name}" : '—')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('total_amount')
+                    ->label('Amount')
+                    ->money('USD')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'draft'                    => 'gray',
+                        'pending_finance_approval' => 'warning',
+                        'finance_approved'         => 'info',
+                        'approved'                 => 'success',
+                        'rejected'                 => 'danger',
+                        default                    => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'draft'                    => 'Draft',
+                        'pending_finance_approval' => 'Awaiting Finance',
+                        'finance_approved'         => 'Awaiting Admin',
+                        'approved'                 => 'Approved ✓',
+                        'rejected'                 => 'Rejected',
+                        default                    => ucfirst($state),
+                    }),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Submitted')
+                    ->date()
+                    ->sortable(),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->actions([
+                Tables\Actions\EditAction::make()
+                    ->visible(fn ($record) => $record->status === 'draft'),
+                Tables\Actions\Action::make('submit')
+                    ->label('Submit')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('primary')
+                    ->requiresConfirmation()
+                    ->modalHeading('Submit Requisition')
+                    ->modalDescription('Once submitted, your requisition will be sent to Finance for approval. You will not be able to edit it.')
+                    ->visible(fn ($record) => $record->status === 'draft')
+                    ->action(fn ($record) => $record->update(['status' => 'pending_finance_approval'])),
+                Tables\Actions\Action::make('downloadPdf')
+                    ->label('Download PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->iconButton()
+                    ->tooltip('Download Requisition PDF')
+                    ->action(function ($record) {
+                        $record->load('orderedBy', 'approvedBy', 'financeApprovedBy');
+                        $pdf = Pdf::loadView('pdf.payment-requisition', ['purchaseOrder' => $record]);
+                        return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            "requisition-{$record->reference_number}.pdf"
+                        );
+                    }),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Infolists\Components\Section::make()->schema([
+                Infolists\Components\TextEntry::make('reference_number')->label('Reference'),
+                Infolists\Components\TextEntry::make('status')->badge()
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'draft'                    => 'Draft',
+                        'pending_finance_approval' => 'Awaiting Finance Approval',
+                        'finance_approved'         => 'Awaiting Admin Approval',
+                        'approved'                 => 'Approved',
+                        'rejected'                 => 'Rejected',
+                        default                    => ucfirst($state),
+                    }),
+                Infolists\Components\TextEntry::make('total_amount')->label('Amount Requested')->money('usd'),
+                Infolists\Components\TextEntry::make('gl_account')
+                    ->label('GL Account')
+                    ->formatStateUsing(fn ($state, $record) => $state ? "{$state} — {$record->gl_account_name}" : '—')
+                    ->placeholder('—'),
+                Infolists\Components\TextEntry::make('title')->label('Purpose')->columnSpanFull(),
+                Infolists\Components\TextEntry::make('attachment')
+                    ->label('Attachment')
+                    ->formatStateUsing(fn ($state) => $state ? 'View / Download' : '—')
+                    ->url(fn ($state) => $state ? Storage::url($state) : null)
+                    ->openUrlInNewTab()
+                    ->columnSpanFull(),
+                Infolists\Components\TextEntry::make('notes')->label('Notes')->columnSpanFull()->placeholder('—'),
+            ])->columns(3),
+        ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index'  => Pages\ListPurchaseOrders::route('/'),
+            'create' => Pages\CreatePurchaseOrder::route('/create'),
+            'view'   => Pages\ViewPurchaseOrder::route('/{record}'),
+            'edit'   => Pages\EditPurchaseOrder::route('/{record}/edit'),
+        ];
+    }
+}
