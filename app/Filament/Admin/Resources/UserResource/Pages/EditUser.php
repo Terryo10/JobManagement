@@ -14,4 +14,14 @@ class EditUser extends EditRecord
     {
         return [Actions\DeleteAction::make()];
     }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        return UserResource::splitPhoneNumber($data);
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return UserResource::mergePhoneNumber($data);
+    }
 }

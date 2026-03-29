@@ -25,7 +25,23 @@ class UserResource extends Resource
             Forms\Components\Section::make()->schema([
                 Forms\Components\TextInput::make('name')->required()->maxLength(255),
                 Forms\Components\TextInput::make('email')->email()->required()->unique(ignoreRecord: true),
-                Forms\Components\TextInput::make('phone_number')->maxLength(20),
+                Forms\Components\Grid::make(3)
+                    ->schema([
+                        Forms\Components\Select::make('phone_prefix')
+                            ->label('Code')
+                            ->options(self::dialCodes())
+                            ->default('+263')
+                            ->searchable()
+                            ->native(false)
+                            ->columnSpan(1),
+                        Forms\Components\TextInput::make('phone_local')
+                            ->label('Phone Number')
+                            ->tel()
+                            ->placeholder('712 345 678')
+                            ->maxLength(15)
+                            ->columnSpan(2),
+                    ])
+                    ->columnSpanFull(),
                 Forms\Components\TextInput::make('password')->password()->revealable()->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null)->dehydrated(fn ($state) => filled($state))->required(fn (string $context) => $context === 'create'),
                 Forms\Components\Select::make('department_id')->relationship('department', 'name')->searchable()->preload(),
                 Forms\Components\Select::make('roles')->multiple()->relationship('roles', 'name')->preload(),
@@ -95,6 +111,84 @@ class UserResource extends Resource
             'index'  => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
             'edit'   => Pages\EditUser::route('/{record}/edit'),
+        ];
+    }
+
+    /** Merge phone_prefix + phone_local into phone_number and remove virtual keys. */
+    public static function mergePhoneNumber(array $data): array
+    {
+        $prefix = $data['phone_prefix'] ?? '';
+        $local  = preg_replace('/\D/', '', $data['phone_local'] ?? '');
+
+        $data['phone_number'] = ($prefix && $local) ? $prefix . $local : null;
+
+        unset($data['phone_prefix'], $data['phone_local']);
+
+        return $data;
+    }
+
+    /**
+     * Split a stored E.164-style number (e.g. +2637123456) back into prefix + local.
+     * Falls back to +263 / raw value when no match is found.
+     */
+    public static function splitPhoneNumber(array $data): array
+    {
+        $phone = $data['phone_number'] ?? '';
+
+        $data['phone_prefix'] = '+263';
+        $data['phone_local']  = '';
+
+        if ($phone) {
+            // Try longest prefix first to avoid partial matches (+1 vs +1868 etc.)
+            $codes = array_keys(self::dialCodes());
+            usort($codes, fn ($a, $b) => strlen($b) - strlen($a));
+
+            foreach ($codes as $code) {
+                if (str_starts_with($phone, $code)) {
+                    $data['phone_prefix'] = $code;
+                    $data['phone_local']  = substr($phone, strlen($code));
+                    break;
+                }
+            }
+
+            if ($data['phone_local'] === '') {
+                $data['phone_local'] = $phone;
+            }
+        }
+
+        return $data;
+    }
+
+    public static function dialCodes(): array
+    {
+        return [
+            '+263' => '🇿🇼 Zimbabwe (+263)',
+            '+27'  => '🇿🇦 South Africa (+27)',
+            '+260' => '🇿🇲 Zambia (+260)',
+            '+267' => '🇧🇼 Botswana (+267)',
+            '+258' => '🇲🇿 Mozambique (+258)',
+            '+265' => '🇲🇼 Malawi (+265)',
+            '+264' => '🇳🇦 Namibia (+264)',
+            '+268' => '🇸🇿 Eswatini (+268)',
+            '+266' => '🇱🇸 Lesotho (+266)',
+            '+255' => '🇹🇿 Tanzania (+255)',
+            '+254' => '🇰🇪 Kenya (+254)',
+            '+256' => '🇺🇬 Uganda (+256)',
+            '+251' => '🇪🇹 Ethiopia (+251)',
+            '+233' => '🇬🇭 Ghana (+233)',
+            '+234' => '🇳🇬 Nigeria (+234)',
+            '+225' => '🇨🇮 Côte d\'Ivoire (+225)',
+            '+20'  => '🇪🇬 Egypt (+20)',
+            '+212' => '🇲🇦 Morocco (+212)',
+            '+44'  => '🇬🇧 United Kingdom (+44)',
+            '+1'   => '🇺🇸 USA / Canada (+1)',
+            '+61'  => '🇦🇺 Australia (+61)',
+            '+91'  => '🇮🇳 India (+91)',
+            '+86'  => '🇨🇳 China (+86)',
+            '+971' => '🇦🇪 UAE (+971)',
+            '+49'  => '🇩🇪 Germany (+49)',
+            '+33'  => '🇫🇷 France (+33)',
+            '+55'  => '🇧🇷 Brazil (+55)',
         ];
     }
 }
