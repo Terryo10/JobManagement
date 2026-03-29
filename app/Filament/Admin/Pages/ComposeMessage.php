@@ -104,6 +104,7 @@ class ComposeMessage extends Page implements HasForms
         }
 
         $baseKey = 'compose.' . now()->timestamp;
+        $errors  = [];
 
         foreach ($recipientIds as $userId) {
             $event = new NotificationEvent(
@@ -117,15 +118,33 @@ class ComposeMessage extends Page implements HasForms
             );
 
             foreach ($channels as $channel) {
-                dispatch(new SendNotificationJob($userId, $event, $channel));
+                try {
+                    (new SendNotificationJob($userId, $event, $channel))->handle(
+                        app(\App\Notifications\Channels\InfobipEmailChannel::class),
+                        app(\App\Notifications\Channels\InfobipSmsChannel::class),
+                        app(\App\Notifications\Channels\InfobipWhatsAppChannel::class),
+                    );
+                } catch (\Throwable $e) {
+                    $errors[] = "User #{$userId} via " . strtoupper($channel) . ': ' . $e->getMessage();
+                }
             }
+        }
+
+        if (! empty($errors)) {
+            Notification::make()
+                ->title('Some messages failed to send.')
+                ->body(implode("\n", array_slice($errors, 0, 3)))
+                ->danger()
+                ->persistent()
+                ->send();
+            return;
         }
 
         $recipientCount = count($recipientIds);
         $channelList    = implode(', ', $channels);
 
         Notification::make()
-            ->title("Message queued for {$recipientCount} recipient(s) via {$channelList}.")
+            ->title("Message sent to {$recipientCount} recipient(s) via {$channelList}.")
             ->success()
             ->send();
 

@@ -112,8 +112,28 @@ class SendMessageAction extends Action
                     idempotencyKey:  $idempotencyKey,
                 );
 
+                $errors = [];
                 foreach ($channels as $channel) {
-                    dispatch(new SendNotificationJob($recipientUserId, $event, $channel));
+                    try {
+                        // Run synchronously so errors surface immediately in the UI
+                        (new SendNotificationJob($recipientUserId, $event, $channel))->handle(
+                            app(\App\Notifications\Channels\InfobipEmailChannel::class),
+                            app(\App\Notifications\Channels\InfobipSmsChannel::class),
+                            app(\App\Notifications\Channels\InfobipWhatsAppChannel::class),
+                        );
+                    } catch (\Throwable $e) {
+                        $errors[] = strtoupper($channel) . ': ' . $e->getMessage();
+                    }
+                }
+
+                if (! empty($errors)) {
+                    Notification::make()
+                        ->title('Message failed to send.')
+                        ->body(implode("\n", $errors))
+                        ->danger()
+                        ->persistent()
+                        ->send();
+                    return;
                 }
 
                 Notification::make()
