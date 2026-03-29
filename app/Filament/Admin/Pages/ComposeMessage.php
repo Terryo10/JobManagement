@@ -3,8 +3,10 @@
 namespace App\Filament\Admin\Pages;
 
 use App\Jobs\SendNotificationJob;
+use App\Models\NotificationLog;
 use App\Models\User;
 use App\Notifications\NotificationEvent;
+use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -27,6 +29,31 @@ class ComposeMessage extends Page implements HasForms
     protected static string  $view            = 'filament.admin.pages.compose-message';
 
     public ?array $data = [];
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('viewHistory')
+                ->label('Message History')
+                ->icon('heroicon-o-clock')
+                ->color('gray')
+                ->slideOver()
+                ->modalHeading('Sent Message History')
+                ->modalDescription('All messages sent via the Compose Message page, ordered by most recent.')
+                ->modalContent(function () {
+                    $logs = NotificationLog::query()
+                        ->where('event_type', 'admin.broadcast')
+                        ->with('notifiable')
+                        ->orderByDesc('created_at')
+                        ->limit(100)
+                        ->get();
+
+                    return view('filament.admin.pages.partials.message-history', compact('logs'));
+                })
+                ->modalSubmitAction(false)
+                ->modalCancelActionLabel('Close'),
+        ];
+    }
 
     public function mount(): void
     {

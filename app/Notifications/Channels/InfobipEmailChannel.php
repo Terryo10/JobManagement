@@ -39,7 +39,13 @@ class InfobipEmailChannel implements NotificationChannelContract
                 'subject_id'      => $event->subjectId,
                 'channel'         => 'mail',
                 'status'          => 'sent',
-                'payload'         => ['idempotency_key' => $event->idempotencyKey],
+                'payload'         => [
+                    'idempotency_key' => $event->idempotencyKey,
+                    'subject'         => $event->title,
+                    'body'            => $event->body,
+                    'action_url'      => $event->actionUrl,
+                    'action_text'     => $event->actionText,
+                ],
             ]);
         } catch (Throwable $e) {
             NotificationLog::create([

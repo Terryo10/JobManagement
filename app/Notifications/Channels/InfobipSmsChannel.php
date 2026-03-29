@@ -39,7 +39,11 @@ class InfobipSmsChannel implements NotificationChannelContract
                 'channel'             => 'sms',
                 'status'              => 'sent',
                 'provider_message_id' => $response['messages'][0]['messageId'] ?? null,
-                'payload'             => ['idempotency_key' => $event->idempotencyKey],
+                'payload'             => [
+                    'idempotency_key' => $event->idempotencyKey,
+                    'subject'         => $event->title,
+                    'body'            => $event->body,
+                ],
             ]);
         } catch (Throwable $e) {
             NotificationLog::create([

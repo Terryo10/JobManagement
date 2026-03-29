@@ -57,7 +57,11 @@ class InfobipWhatsAppChannel implements NotificationChannelContract
                 'provider_message_id' => $response['messages'][0]['messageId']
                     ?? $response['messageId']
                     ?? null,
-                'payload'             => ['idempotency_key' => $event->idempotencyKey],
+                'payload'             => [
+                    'idempotency_key' => $event->idempotencyKey,
+                    'subject'         => $event->title,
+                    'body'            => $event->body,
+                ],
             ]);
         } catch (Throwable $e) {
             NotificationLog::create([
