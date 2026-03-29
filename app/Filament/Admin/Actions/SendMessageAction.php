@@ -5,7 +5,6 @@ namespace App\Filament\Admin\Actions;
 use App\Jobs\SendNotificationJob;
 use App\Models\User;
 use App\Notifications\NotificationEvent;
-use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
@@ -13,6 +12,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
+use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 
 class SendMessageAction extends Action
