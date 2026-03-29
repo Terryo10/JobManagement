@@ -15,6 +15,24 @@
 return [
 
     // -------------------------------------------------------------------------
+    // Announcements
+    // -------------------------------------------------------------------------
+    'announcement.published' => [
+        'label'            => 'New Announcement Posted',
+        'channel_database' => true,
+        'channel_mail'     => true,
+        'channel_sms'      => false,
+        'channel_whatsapp' => false,
+    ],
+    'announcement.comment' => [
+        'label'            => 'New Comment on Announcement',
+        'channel_database' => true,
+        'channel_mail'     => true,
+        'channel_sms'      => false,
+        'channel_whatsapp' => false,
+    ],
+
+    // -------------------------------------------------------------------------
     // Work Orders
     // -------------------------------------------------------------------------
     'work_order.created' => [
