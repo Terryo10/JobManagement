@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Filament\Admin\Actions\SendMessageAction;
 use App\Filament\Admin\Resources\AdminTaskResource\Pages;
 use App\Models\AdminTask;
 use Filament\Forms;
@@ -200,6 +201,9 @@ class AdminTaskResource extends Resource
                     }),
 
                 Tables\Actions\DeleteAction::make(),
+
+                SendMessageAction::make('send_message_admintask')
+                    ->withRecordUrl(fn ($record) => url('/admin/admin-tasks/' . $record->getKey())),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

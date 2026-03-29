@@ -29,7 +29,7 @@ class ViewInvoice extends ViewRecord
                         'status' => 'sent',
                         'issued_at' => $record->issued_at ?? now(),
                     ]);
-                    \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\InvoiceSentToClient($record));
+                    app(\App\Services\InvoiceMailService::class)->sendInvoiceToClient($record, $email);
                     $clientUser = \App\Models\User::where('email', $record->client?->email)->first();
                     if ($clientUser) {
                         $signedUrl = route('invoices.sign.show', ['invoice' => $record->id]);

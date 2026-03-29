@@ -39,6 +39,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Finance')->icon('heroicon-o-banknotes'),
                 NavigationGroup::make('HR')->icon('heroicon-o-users'),
                 NavigationGroup::make('Reports')->icon('heroicon-o-chart-bar'),
+                NavigationGroup::make('Messaging')->icon('heroicon-o-chat-bubble-left-right'),
                 NavigationGroup::make('Division')->icon('heroicon-o-squares-2x2')->collapsed(),
             ])
             ->plugin(FilamentFullCalendarPlugin::make())

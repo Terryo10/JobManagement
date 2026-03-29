@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Filament\Admin\Actions\SendMessageAction;
 use App\Filament\Admin\Resources\WorkOrderResource\Pages;
 use App\Filament\Admin\Resources\WorkOrderResource\RelationManagers;
 use App\Models\WorkOrder;
@@ -404,6 +405,8 @@ class WorkOrderResource extends Resource
                     $record->release();
                     \Filament\Notifications\Notification::make()->title('Job unassigned and returned to queue.')->success()->send();
                 }),
+            SendMessageAction::make('send_message_wo')
+                ->withRecordUrl(fn ($record) => url('/admin/work-orders/' . $record->getKey())),
         ])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }

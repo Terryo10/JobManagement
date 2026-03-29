@@ -3,9 +3,9 @@
 namespace App\Filament\Accountant\Resources;
 
 use App\Filament\Accountant\Resources\InvoiceResource\Pages;
-use App\Mail\InvoiceSentToClient;
 use App\Models\Invoice;
 use App\Services\AiReportService;
+use App\Services\InvoiceMailService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -15,7 +15,6 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Mail;
 use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class InvoiceResource extends Resource
@@ -200,7 +199,7 @@ class InvoiceResource extends Resource
                 ->action(function ($record, array $data) {
                     $email = $data['email'];
                     $record->update(['status' => 'sent']);
-                    Mail::to($email)->send(new InvoiceSentToClient($record));
+                    app(InvoiceMailService::class)->sendInvoiceToClient($record, $email);
                     
                     // Notify the client user in the dashboard if they exist
                     $clientUser = \App\Models\User::where('email', $record->client?->email)->first();

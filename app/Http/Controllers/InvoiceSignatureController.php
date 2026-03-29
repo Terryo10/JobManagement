@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Invoice;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
-use App\Mail\InvoiceSigned;
+use App\Services\InvoiceMailService;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceSignatureController extends Controller
@@ -38,9 +36,8 @@ class InvoiceSignatureController extends Controller
             'status' => 'signed',
         ]);
 
-        // We will dispatch email with PDF here
         if ($invoice->client && $invoice->client->email) {
-            Mail::to($invoice->client->email)->send(new InvoiceSigned($invoice));
+            app(InvoiceMailService::class)->sendInvoiceSigned($invoice, $invoice->client->email);
         }
 
         return redirect()->route('invoices.sign.show', $invoice)->with('success', 'Thank you! Your invoice has been signed successfully.');

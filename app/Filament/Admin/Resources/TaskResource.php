@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Filament\Admin\Actions\SendMessageAction;
 use App\Filament\Admin\Resources\TaskResource\Pages;
 use App\Filament\Admin\Resources\TaskResource\RelationManagers;
 use App\Models\Task;
@@ -121,6 +122,8 @@ class TaskResource extends Resource
                     $record->release();
                     \Filament\Notifications\Notification::make()->title('Task unassigned and returned to queue.')->success()->send();
                 }),
+            SendMessageAction::make('send_message_task')
+                ->withRecordUrl(fn ($record) => url('/admin/tasks/' . $record->getKey())),
         ])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
