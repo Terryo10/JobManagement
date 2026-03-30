@@ -16,7 +16,7 @@ class PurchaseOrder extends Model
         'title', 'reference_number', 'status', 'ordered_by',
         'approved_by', 'finance_approved_by', 'total_amount',
         'expected_delivery', 'delivered_at', 'notes',
-        'work_order_id', 'attachment',
+        'work_order_id', 'attachments',
         'finance_signature', 'finance_signature_date',
         'admin_signature', 'admin_signature_date',
         'gl_account', 'gl_account_name',
@@ -30,6 +30,7 @@ class PurchaseOrder extends Model
             'total_amount'          => 'decimal:2',
             'finance_signature_date' => 'datetime',
             'admin_signature_date'  => 'datetime',
+            'attachments'           => 'array',
         ];
     }
 
