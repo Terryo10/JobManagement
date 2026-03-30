@@ -49,7 +49,11 @@ abstract class BasePersonalFileResource extends Resource
                     ->live(),
 
                 Forms\Components\Select::make('sharedWith')
-                    ->relationship('sharedWith', 'name')
+                    ->relationship(
+                        'sharedWith',
+                        'name',
+                        fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('users.id', '!=', auth()->id()),
+                    )
                     ->multiple()
                     ->preload()
                     ->searchable()
