@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PurchaseOrder extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'title', 'reference_number', 'status', 'ordered_by',
         'approved_by', 'finance_approved_by', 'total_amount',

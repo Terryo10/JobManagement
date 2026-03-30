@@ -57,7 +57,7 @@ class AnnouncementCommentsRelationManager extends RelationManager
                     }),
             ])
             ->actions([
-                Tables\Actions\DeleteAction::make()
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make()
                     ->visible(fn ($record) => $record->user_id === auth()->id()),
             ])
             ->paginated(false);

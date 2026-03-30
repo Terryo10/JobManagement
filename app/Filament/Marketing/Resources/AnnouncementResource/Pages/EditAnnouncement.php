@@ -14,7 +14,7 @@ class EditAnnouncement extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
+            \App\Filament\Shared\Actions\RequestDeletionAction::make(),
         ];
     }
 

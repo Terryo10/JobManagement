@@ -107,7 +107,7 @@ class AnnouncementResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->visible(fn ($record) => $record->created_by === auth()->id()),
-                Tables\Actions\DeleteAction::make()
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make()
                     ->visible(fn ($record) => $record->created_by === auth()->id()),
             ])
             ->paginated([12, 24, 48]);

@@ -13,7 +13,7 @@ class EditTask extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [Actions\DeleteAction::make()];
+        return [\App\Filament\Shared\Actions\RequestDeletionAction::make()];
     }
 
     protected function getRedirectUrl(): string

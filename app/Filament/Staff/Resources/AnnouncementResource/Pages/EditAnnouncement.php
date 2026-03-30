@@ -2,6 +2,7 @@
 
 namespace App\Filament\Staff\Resources\AnnouncementResource\Pages;
 
+use App\Filament\Shared\Actions\RequestDeletionAction;
 use App\Filament\Staff\Resources\AnnouncementResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -14,7 +15,7 @@ class EditAnnouncement extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
+            RequestDeletionAction::make(),
         ];
     }
 

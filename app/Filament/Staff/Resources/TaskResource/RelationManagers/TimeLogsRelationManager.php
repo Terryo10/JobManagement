@@ -37,7 +37,7 @@ class TimeLogsRelationManager extends RelationManager
                 $data['user_id'] = auth()->id();
                 return $data;
             })])
-            ->actions([Tables\Actions\EditAction::make(), Tables\Actions\DeleteAction::make()])
+            ->actions([Tables\Actions\EditAction::make(), \App\Filament\Shared\Actions\RequestDeletionTableAction::make()])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 }

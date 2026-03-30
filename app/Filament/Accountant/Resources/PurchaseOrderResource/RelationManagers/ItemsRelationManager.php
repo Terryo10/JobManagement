@@ -61,7 +61,7 @@ class ItemsRelationManager extends RelationManager
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->after(fn () => $this->recalculatePO()),
-                Tables\Actions\DeleteAction::make()
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make()
                     ->after(fn () => $this->recalculatePO()),
             ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([

@@ -98,7 +98,7 @@ abstract class BaseDocumentsRelationManager extends RelationManager
                     ->url(fn ($record) => Storage::disk('contabo')->temporaryUrl($record->file_path, now()->addHour()))
                     ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()]),
