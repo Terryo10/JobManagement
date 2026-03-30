@@ -40,6 +40,7 @@ class StaffPanelProvider extends PanelProvider
             ->colors(['primary' => Color::Blue])
             ->brandName('Household Media — Staff')
             ->databaseNotifications()
+            ->databaseNotificationsPolling('5s')
             ->plugin(FilamentFullCalendarPlugin::make())
             ->sidebarCollapsibleOnDesktop()
             ->readOnlyRelationManagersOnResourceViewPagesByDefault(false)

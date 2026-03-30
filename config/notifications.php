@@ -88,7 +88,7 @@ return [
         'label'             => 'Job Budget Alert',
         'channel_database'  => true,
         'channel_mail'      => true,
-        'channel_sms'       => false,
+        'channel_sms'       => true,
         'channel_whatsapp'  => true,
     ],
 
@@ -148,7 +148,7 @@ return [
         'label'             => 'Task Overdue',
         'channel_database'  => true,
         'channel_mail'      => true,
-        'channel_sms'       => false,
+        'channel_sms'       => true,
         'channel_whatsapp'  => true,
     ],
 
@@ -230,14 +230,14 @@ return [
         'label'             => 'Leave Request Approved',
         'channel_database'  => true,
         'channel_mail'      => true,
-        'channel_sms'       => false,
+        'channel_sms'       => true,
         'channel_whatsapp'  => true,
     ],
     'leave.denied' => [
         'label'             => 'Leave Request Denied',
         'channel_database'  => true,
         'channel_mail'      => true,
-        'channel_sms'       => false,
+        'channel_sms'       => true,
         'channel_whatsapp'  => true,
     ],
 
@@ -298,7 +298,7 @@ return [
         'label'             => 'Low Stock Alert',
         'channel_database'  => true,
         'channel_mail'      => true,
-        'channel_sms'       => false,
+        'channel_sms'       => true,
         'channel_whatsapp'  => true,
     ],
 

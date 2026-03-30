@@ -3,9 +3,10 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Notification;
 
-class DatabaseAlert extends Notification
+class DatabaseAlert extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -20,7 +21,16 @@ class DatabaseAlert extends Notification
 
     public function via($notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
+    }
+
+    /**
+     * Use the default Laravel notification broadcast channel
+     * (App.Models.User.{id} → private) so Echo listeners pick it up.
+     */
+    public function broadcastOn(): array
+    {
+        return [];
     }
 
     public function toArray($notifiable): array
