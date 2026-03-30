@@ -31,7 +31,7 @@ class AccountantPanelProvider extends PanelProvider
             ->brandName('Household Media — Finance')
             ->plugin(FilamentFullCalendarPlugin::make())
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
+            ->databaseNotificationsPolling('5s')
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Accountant/Resources'), for: 'App\\Filament\\Accountant\\Resources')
             ->discoverPages(in: app_path('Filament/Accountant/Pages'), for: 'App\\Filament\\Accountant\\Pages')

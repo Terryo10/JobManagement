@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Filament\Admin\Resources\AnnouncementResource;
 use App\Models\AnnouncementComment;
 use App\Notifications\NotificationEvent;
 use App\Services\NotificationRouter;
@@ -41,17 +42,26 @@ class AnnouncementCommentObserver
         $commenterName = $comment->user?->name ?? 'Someone';
         $body          = "\"{$commenterName}\" commented: " . \Illuminate\Support\Str::limit($comment->body, 120);
 
+        $actionUrl = rescue(
+            fn () => AnnouncementResource::getUrl('view', ['record' => $announcement->id]),
+            null,
+            false
+        );
+
         app(NotificationRouter::class)->dispatch(new NotificationEvent(
             type:             'announcement.comment',
             title:            'New comment on: ' . $announcement->title,
             body:             $body,
             icon:             'heroicon-o-chat-bubble-left-right',
             color:            'warning',
+            actionUrl:        $actionUrl,
+            actionText:       'View Discussion',
             recipientUserIds: $notifyIds,
             subjectType:      \App\Models\Announcement::class,
             subjectId:        $announcement->id,
             priority:         'normal',
             idempotencyKey:   'announcement.comment.' . $comment->id,
+            subject:          '[Announcement Reply] ' . $announcement->title,
         ));
     }
 }
