@@ -21,15 +21,19 @@ class InfobipEmailChannel implements NotificationChannelContract
         }
 
         try {
+            $emailSubject = $event->subject ?? $event->title;
+            $typeLabel    = config('notifications')[$event->type]['label'] ?? null;
+
             $html = View::make('emails.notification', [
                 'title'      => $event->title,
                 'body'       => $event->body,
                 'actionUrl'  => $event->actionUrl,
                 'actionText' => $event->actionText,
                 'color'      => $event->color,
+                'typeLabel'  => $typeLabel,
             ])->render();
 
-            $this->client->sendEmail($recipient->email, $event->title, $html);
+            $this->client->sendEmail($recipient->email, $emailSubject, $html);
 
             NotificationLog::create([
                 'event_type'      => $event->type,
@@ -41,7 +45,7 @@ class InfobipEmailChannel implements NotificationChannelContract
                 'status'          => 'sent',
                 'payload'         => [
                     'idempotency_key' => $event->idempotencyKey,
-                    'subject'         => $event->title,
+                    'subject'         => $emailSubject,
                     'body'            => $event->body,
                     'action_url'      => $event->actionUrl,
                     'action_text'     => $event->actionText,

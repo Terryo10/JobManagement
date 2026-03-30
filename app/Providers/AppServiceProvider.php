@@ -23,6 +23,9 @@ use App\Observers\TaskObserver;
 use App\Observers\WorkOrderObserver;
 use App\Services\InfobipClient;
 use App\Services\NotificationRouter;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -49,5 +52,16 @@ class AppServiceProvider extends ServiceProvider
         StockLevel::observe(StockLevelObserver::class);
         PurchaseOrder::observe(PurchaseOrderObserver::class);
         Expense::observe(ExpenseObserver::class);
+
+        // Inject the Reverb Echo connection + notification sound into every panel.
+        // echo.js sets window.Echo; the partial uses it to subscribe to the private
+        // user channel and plays a two-tone ping on each incoming notification.
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            fn (): string => Blade::render(
+                "@vite('resources/js/echo.js')\n" .
+                "@include('filament.partials.notification-sound')"
+            ),
+        );
     }
 }

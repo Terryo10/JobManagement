@@ -38,7 +38,7 @@ class MarketingPanelProvider extends PanelProvider
                 NavigationGroup::make('Reports')->icon('heroicon-o-document-chart-bar'),
             ])
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
+            ->databaseNotificationsPolling('5s')
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Marketing/Resources'), for: 'App\\Filament\\Marketing\\Resources')
             ->discoverPages(in: app_path('Filament/Marketing/Pages'), for: 'App\\Filament\\Marketing\\Pages')

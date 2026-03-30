@@ -16,6 +16,11 @@ class NotificationEvent
         public readonly string  $color           = 'info',
         public readonly ?string $actionUrl       = null,
         public readonly ?string $actionText      = null,
+        /**
+         * Override the email subject line independently of the in-app title.
+         * Falls back to $title when null.
+         */
+        public readonly ?string $subject         = null,
         /** Direct user IDs to notify */
         public readonly array   $recipientUserIds  = [],
         /** Role slugs — all users with these roles are notified */
