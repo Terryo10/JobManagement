@@ -73,7 +73,7 @@ class TaskResource extends Resource
                     ->default('normal')
                     ->required(),
                 Forms\Components\TextInput::make('completion_percentage')->numeric()->suffix('%')->minValue(0)->maxValue(100)->default(0),
-                Forms\Components\TextInput::make('actual_hours')->numeric()->suffix('hrs')->label('Hours Worked'),
+                Forms\Components\TextInput::make('actual_hours')->numeric()->suffix('hrs')->label('Hours Worked')->default(0),
                 Forms\Components\DatePicker::make('deadline'),
                 Forms\Components\RichEditor::make('description')
                     ->toolbarButtons(['bold', 'italic', 'underline', 'bulletList', 'orderedList', 'link', 'undo', 'redo'])

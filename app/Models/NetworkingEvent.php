@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class NetworkingEvent extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'name', 'type', 'location', 'start_date', 'end_date',
         'description', 'attendees', 'outcomes', 'leads_generated', 'created_by',

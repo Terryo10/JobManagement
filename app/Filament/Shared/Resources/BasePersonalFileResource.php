@@ -34,13 +34,14 @@ abstract class BasePersonalFileResource extends Resource
                     ->columnSpanFull(),
 
                 Forms\Components\FileUpload::make('file_path')
-                    ->label('File')
+                    ->label('File(s)')
                     ->required()
                     ->disk('contabo')
                     ->directory('files/personal/' . auth()->id())
                     ->visibility('private')
                     ->acceptedFileTypes(DocumentFileTypes::all())
                     ->maxSize(DocumentFileTypes::SIZE_1GB)
+                    ->multiple()
                     ->columnSpanFull(),
 
                 Forms\Components\Toggle::make('is_shared')
@@ -49,7 +50,11 @@ abstract class BasePersonalFileResource extends Resource
                     ->live(),
 
                 Forms\Components\Select::make('sharedWith')
-                    ->relationship('sharedWith', 'name')
+                    ->relationship(
+                        'sharedWith',
+                        'name',
+                        fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('users.id', '!=', auth()->id()),
+                    )
                     ->multiple()
                     ->preload()
                     ->searchable()

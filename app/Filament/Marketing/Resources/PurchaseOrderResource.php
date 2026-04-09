@@ -69,9 +69,10 @@ class PurchaseOrderResource extends Resource
                     ->preload()
                     ->label('Link to Work Order')
                     ->columnSpanFull(),
-                Forms\Components\FileUpload::make('attachment')
-                    ->label('Attachment (Optional)')
+                Forms\Components\FileUpload::make('attachments')
+                    ->label('Attachments (Optional)')
                     ->directory('requisition-attachments')
+                    ->multiple()
                     ->columnSpanFull(),
                 Forms\Components\Textarea::make('notes')
                     ->label('Additional Notes')
@@ -177,9 +178,10 @@ class PurchaseOrderResource extends Resource
                     ->formatStateUsing(fn ($state, $record) => $state ? "{$state} — {$record->gl_account_name}" : '—')
                     ->placeholder('—'),
                 Infolists\Components\TextEntry::make('title')->label('Purpose')->columnSpanFull(),
-                Infolists\Components\TextEntry::make('attachment')
-                    ->label('Attachment')
-                    ->formatStateUsing(fn ($state) => $state ? 'View / Download' : '—')
+                Infolists\Components\TextEntry::make('attachments')
+                    ->label('Attachments')
+                    ->listWithLineBreaks()
+                    ->formatStateUsing(fn ($state) => $state ? 'View / Download (' . basename($state) . ')' : '—')
                     ->url(fn ($state) => $state ? Storage::url($state) : null)
                     ->openUrlInNewTab()
                     ->columnSpanFull(),

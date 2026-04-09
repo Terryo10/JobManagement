@@ -142,7 +142,7 @@ abstract class BaseCommentsRelationManager extends RelationManager
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->visible(fn ($record) => $this->canManageAllComments || $record->user_id === auth()->id()),
-                Tables\Actions\DeleteAction::make()
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make()
                     ->visible(fn ($record) => $this->canManageAllComments || $record->user_id === auth()->id()),
             ])
             ->bulkActions([

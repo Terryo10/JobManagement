@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class WorkOrder extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, LogsActivity;
 
     protected static function booted(): void
     {

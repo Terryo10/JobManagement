@@ -69,7 +69,7 @@ class MaterialsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make(),
             ])
             ->emptyStateHeading('No materials logged yet')
             ->emptyStateDescription('Record any materials or supplies consumed on this job.')

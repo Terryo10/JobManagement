@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Send deadline reminders, overdue alerts, budget alerts, low-stock and invoice overdue notices
 Schedule::command('notifications:send')->daily();
+
+// Prune old activity logs (keep 90 days)
+Schedule::command('logs:prune')->daily();

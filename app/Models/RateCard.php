@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RateCard extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'service_type', 'category', 'unit', 'rate', 'currency',
         'effective_from', 'effective_to', 'is_active', 'created_by',

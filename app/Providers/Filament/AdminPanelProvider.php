@@ -41,6 +41,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Reports')->icon('heroicon-o-chart-bar'),
                 NavigationGroup::make('Messaging')->icon('heroicon-o-chat-bubble-left-right'),
                 NavigationGroup::make('Division')->icon('heroicon-o-squares-2x2')->collapsed(),
+                NavigationGroup::make('System')->icon('heroicon-o-cog-8-tooth')->collapsed(),
             ])
             ->plugin(FilamentFullCalendarPlugin::make())
             ->databaseNotifications()

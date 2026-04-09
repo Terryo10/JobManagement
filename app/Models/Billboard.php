@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 
 class Billboard extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'name', 'location_description', 'latitude', 'longitude',
         'size', 'type', 'status', 'monthly_rate', 'next_maintenance_date', 'notes',

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockLevel extends Model
 {
+    use LogsActivity;
     public $timestamps = false;
 
     protected $fillable = ['material_id', 'current_quantity', 'last_updated', 'last_updated_by'];

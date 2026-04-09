@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StaffAvailability extends Model
 {
+    use LogsActivity;
     protected $table = 'staff_availability';
     protected $fillable = [
         'user_id', 'unavailable_from', 'unavailable_to',

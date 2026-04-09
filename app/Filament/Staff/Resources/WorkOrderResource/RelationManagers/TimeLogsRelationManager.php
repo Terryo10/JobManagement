@@ -73,7 +73,7 @@ class TimeLogsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make(),
             ])
             ->emptyStateHeading('No time logged yet')
             ->emptyStateDescription('Track the hours you spend on tasks for this job.')

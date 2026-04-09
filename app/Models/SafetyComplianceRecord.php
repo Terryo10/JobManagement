@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class SafetyComplianceRecord extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'work_order_id', 'checklist_item', 'is_complete',
         'completed_by', 'completed_at', 'notes',

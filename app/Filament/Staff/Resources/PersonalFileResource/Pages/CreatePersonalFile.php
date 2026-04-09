@@ -7,5 +7,7 @@ use Filament\Resources\Pages\CreateRecord;
 
 class CreatePersonalFile extends CreateRecord
 {
+    use \App\Filament\Shared\Resources\Traits\HandlesMultiplePersonalFiles;
+
     protected static string $resource = PersonalFileResource::class;
 }

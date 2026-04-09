@@ -4,6 +4,7 @@ namespace App\Filament\Staff\Resources\TaskResource\Pages;
 
 use App\Filament\Staff\Resources\TaskResource;
 use App\Filament\Staff\Resources\WorkOrderResource;
+use App\Filament\Shared\Actions\RequestDeletionAction;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -13,7 +14,7 @@ class EditTask extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [Actions\DeleteAction::make()];
+        return [RequestDeletionAction::make()];
     }
 
     protected function getRedirectUrl(): string

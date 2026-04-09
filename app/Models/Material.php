@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Material extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'name', 'sku', 'description', 'category', 'unit',
         'minimum_stock_level', 'reorder_quantity', 'preferred_supplier_id',

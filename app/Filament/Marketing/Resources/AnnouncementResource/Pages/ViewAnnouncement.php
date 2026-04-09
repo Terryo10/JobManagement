@@ -15,7 +15,7 @@ class ViewAnnouncement extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->visible(fn () => $this->getRecord()->created_by === auth()->id()),
-            Actions\DeleteAction::make()
+            \App\Filament\Shared\Actions\RequestDeletionAction::make()
                 ->visible(fn () => $this->getRecord()->created_by === auth()->id())
                 ->successRedirectUrl(AnnouncementResource::getUrl('index')),
         ];
