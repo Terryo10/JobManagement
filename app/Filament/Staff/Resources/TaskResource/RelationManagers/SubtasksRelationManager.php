@@ -51,7 +51,7 @@ class SubtasksRelationManager extends RelationManager
             })])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make(),
             ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }

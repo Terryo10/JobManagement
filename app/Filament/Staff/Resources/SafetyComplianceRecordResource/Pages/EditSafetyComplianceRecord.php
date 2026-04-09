@@ -2,8 +2,8 @@
 
 namespace App\Filament\Staff\Resources\SafetyComplianceRecordResource\Pages;
 
+use App\Filament\Shared\Actions\RequestDeletionAction;
 use App\Filament\Staff\Resources\SafetyComplianceRecordResource;
-use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditSafetyComplianceRecord extends EditRecord
@@ -12,6 +12,6 @@ class EditSafetyComplianceRecord extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [Actions\DeleteAction::make()];
+        return [RequestDeletionAction::make()];
     }
 }

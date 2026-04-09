@@ -17,7 +17,7 @@ class AnnouncementsWidget extends Widget
             ->withCount('comments')
             ->orderByDesc('is_pinned')
             ->orderByDesc('created_at')
-            ->limit(5)
+            ->limit(1)
             ->get();
 
         return [

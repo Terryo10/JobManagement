@@ -109,7 +109,7 @@ class StaffAvailabilityResource extends Resource
                 // Staff can only edit/delete pending requests
                 Tables\Actions\EditAction::make()
                     ->hidden(fn (StaffAvailability $record) => $record->status !== 'pending'),
-                Tables\Actions\DeleteAction::make()
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make()
                     ->hidden(fn (StaffAvailability $record) => $record->status !== 'pending'),
             ])
             ->emptyStateHeading('No leave requests yet')

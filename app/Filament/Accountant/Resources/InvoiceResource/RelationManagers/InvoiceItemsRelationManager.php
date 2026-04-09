@@ -68,7 +68,7 @@ class InvoiceItemsRelationManager extends RelationManager
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->after(fn () => $this->recalculateInvoice()),
-                Tables\Actions\DeleteAction::make()
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make()
                     ->after(fn () => $this->recalculateInvoice()),
             ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([

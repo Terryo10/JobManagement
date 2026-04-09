@@ -344,6 +344,7 @@ class DatabaseSeeder extends Seeder
 
         // ── Purchase Orders ─────────────────────────────
         $po1 = PurchaseOrder::firstOrCreate(['reference_number' => 'PO-2026-0001'], [
+            'title' => 'Printing Materials for Summer Campaign',
             'supplier_id' => $supplier1->id, 'status' => 'ordered',
             'ordered_by' => $manager->id, 'approved_by' => $admin->id,
             'total_amount' => 1525.00, 'expected_delivery' => now()->addDays(7),

@@ -43,7 +43,7 @@ class EditInvoice extends EditRecord
                     }
                     \Filament\Notifications\Notification::make()->title('Invoice emailed successfully.')->success()->send();
                 }),
-            Actions\DeleteAction::make(),
+            \App\Filament\Shared\Actions\RequestDeletionAction::make(),
         ];
     }
 }
