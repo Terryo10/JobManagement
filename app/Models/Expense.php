@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Expense extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'work_order_id', 'category', 'amount', 'currency',
         'description', 'expense_date', 'submitted_by',

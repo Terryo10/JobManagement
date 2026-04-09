@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Equipment extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'name', 'serial_number', 'category', 'division', 'status',
         'current_work_order_id', 'purchase_date', 'next_maintenance_date', 'notes',

@@ -89,7 +89,7 @@ class SafetyChecklistRelationManager extends RelationManager
                         ]);
                     }),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                \App\Filament\Shared\Actions\RequestDeletionTableAction::make(),
             ])
             ->emptyStateHeading('No checklist items yet')
             ->emptyStateDescription('Add safety items to sign off before closing this job.')

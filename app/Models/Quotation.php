@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Quotation extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'quotation_number', 'client_id', 'work_order_id', 'created_by',
         'status', 'currency', 'subtotal', 'tax_rate', 'tax_amount', 'total',

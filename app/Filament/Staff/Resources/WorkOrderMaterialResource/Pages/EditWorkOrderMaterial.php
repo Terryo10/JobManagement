@@ -2,8 +2,8 @@
 
 namespace App\Filament\Staff\Resources\WorkOrderMaterialResource\Pages;
 
+use App\Filament\Shared\Actions\RequestDeletionAction;
 use App\Filament\Staff\Resources\WorkOrderMaterialResource;
-use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditWorkOrderMaterial extends EditRecord
@@ -12,6 +12,6 @@ class EditWorkOrderMaterial extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [Actions\DeleteAction::make()];
+        return [RequestDeletionAction::make()];
     }
 }
