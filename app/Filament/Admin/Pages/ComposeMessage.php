@@ -97,14 +97,14 @@ class ComposeMessage extends Page implements HasForms
                 Select::make('whatsapp_template')
                     ->label('WhatsApp Template')
                     ->options([
-                        'financial_approval_request' => 'financial_approval_request',
-                        'invoice_alert' => 'invoice_alert',
-                        'work_order_assigned' => 'work_order_assigned',
-                        'quotation_status_update' => 'quotation_status_update',
-                        'company_announcement' => 'company_announcement',
-                        'action_required_alert' => 'action_required_alert',
-                        'completion_success' => 'completion_success',
-                        'welcome_onboarding' => 'welcome_onboarding',
+                        'financial_approval_request' => 'Financial Approval Request',
+                        'invoice_alert' => 'Invoice Alert',
+                        'work_order_assigned' => 'Work Order Assigned',
+                        'quotation_status_update' => 'Quotation Status Update',
+                        'company_announcement' => 'Company Announcement',
+                        'action_required_alert' => 'Action Required Alert',
+                        'completion_success' => 'Completion Success',
+                        'welcome_onboarding' => 'Welcome Onboarding',
                     ])
                     ->live()
                     ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')))

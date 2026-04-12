@@ -25,8 +25,8 @@ class InfobipWhatsAppChannel implements NotificationChannelContract
             return;
         }
 
-        // Sanitize phone to E.164 format (keep only + and digits)
-        $phone = preg_replace('/[^\d+]/', '', $phone);
+        // Sanitize phone to E.164 format strictly numeric (no + allowed for sending)
+        $phone = preg_replace('/[^\d]/', '', $phone);
 
         // Use an approved template when specified, otherwise send free-form text.
         // Free-form only works within a 24-hour customer-initiated session window.

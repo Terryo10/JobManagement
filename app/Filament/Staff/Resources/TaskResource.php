@@ -123,7 +123,7 @@ class TaskResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Claim this task?')
                     ->modalDescription('You will be assigned to this task and it will move to "In Progress".')
-                    ->visible(fn ($record) => $record->claimed_by === null)
+                    ->visible(fn ($record) => $record->claimed_by === null && $record->status !== 'completed')
                     ->action(function ($record) {
                         $success = $record->claim(auth()->user());
                         if ($success) {
@@ -139,13 +139,13 @@ class TaskResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Release this task?')
                     ->modalDescription('This task will go back to the queue for others to claim.')
-                    ->visible(fn ($record) => $record->claimed_by === auth()->id())
+                    ->visible(fn ($record) => $record->claimed_by === auth()->id() && $record->status !== 'completed')
                     ->action(function ($record) {
                         $record->release();
                         Notification::make()->title('Task released back to queue.')->success()->send();
                     }),
                 Tables\Actions\EditAction::make()->label('Update')
-                    ->visible(fn ($record) => $record->claimed_by === auth()->id()),
+                    ->visible(fn ($record) => $record->claimed_by === auth()->id() && $record->status !== 'completed'),
             ])
             ->defaultSort('deadline');
     }

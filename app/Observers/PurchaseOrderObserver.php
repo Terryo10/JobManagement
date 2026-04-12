@@ -64,6 +64,10 @@ class PurchaseOrderObserver
             subjectId:      $order->id,
             priority:       'high',
             idempotencyKey: "req.submitted.{$order->id}",
+            extraData: [
+                'whatsapp_template' => 'requisition_submitted',
+                'whatsapp_variables' => [$requester, $order->reference_number, $amount, $order->title],
+            ],
         ));
     }
 
@@ -85,6 +89,10 @@ class PurchaseOrderObserver
             subjectId:      $order->id,
             priority:       'high',
             idempotencyKey: "req.finance_approved.{$order->id}",
+            extraData: [
+                'whatsapp_template' => 'requisition_finance_appr',
+                'whatsapp_variables' => [$order->reference_number, $amount, $financeName],
+            ],
         ));
     }
 
@@ -110,6 +118,10 @@ class PurchaseOrderObserver
             subjectId:        $order->id,
             priority:         'high',
             idempotencyKey:   "req.approved.{$order->id}",
+            extraData: [
+                'whatsapp_template' => 'requisition_approved',
+                'whatsapp_variables' => [$order->reference_number, $amount, $order->title, $approverName],
+            ],
         ));
     }
 
@@ -134,6 +146,10 @@ class PurchaseOrderObserver
             subjectId:        $order->id,
             priority:         'high',
             idempotencyKey:   "req.rejected.{$order->id}",
+            extraData: [
+                'whatsapp_template' => 'requisition_rejected',
+                'whatsapp_variables' => [$order->reference_number, $amount, $order->title],
+            ],
         ));
     }
 
