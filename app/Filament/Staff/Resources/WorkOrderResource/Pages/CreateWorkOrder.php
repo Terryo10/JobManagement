@@ -16,15 +16,7 @@ class CreateWorkOrder extends CreateRecord
         $data['claimed_at'] = now();
         $data['created_by'] = auth()->id();
 
-        // Auto-generate reference number
-        $prefix = 'WO-' . date('Y') . '-';
-        $lastOrder = WorkOrder::where('reference_number', 'like', $prefix . '%')
-            ->orderByDesc('reference_number')
-            ->first();
-        $nextNum = $lastOrder
-            ? (int) str_replace($prefix, '', $lastOrder->reference_number) + 1
-            : 1;
-        $data['reference_number'] = $prefix . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
+
 
         return $data;
     }

@@ -12,9 +12,12 @@ class CreateTask extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        $workOrderId = $this->record->work_order_id;
-        if ($workOrderId) {
-            return WorkOrderResource::getUrl('view', ['record' => $workOrderId]);
+        $workOrder = $this->record->workOrder;
+        if ($workOrder) {
+            if ($workOrder->claimed_by === auth()->id()) {
+                return WorkOrderResource::getUrl('view', ['record' => $workOrder->id]);
+            }
+            return \App\Filament\Staff\Resources\AllWorkOrdersResource::getUrl('view', ['record' => $workOrder->id]);
         }
         return $this->getResource()::getUrl('index');
     }

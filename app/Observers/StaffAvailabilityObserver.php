@@ -44,6 +44,10 @@ class StaffAvailabilityObserver
             recipientRoles: ['manager', 'super_admin'],
             subjectType:    StaffAvailability::class,
             subjectId:      $availability->id,
+            extraData: [
+                'whatsapp_template' => 'leave_requested',
+                'whatsapp_variables' => [$staffName, $from, $to, $reason],
+            ],
         ));
     }
 
@@ -78,6 +82,10 @@ class StaffAvailabilityObserver
             subjectType:      StaffAvailability::class,
             subjectId:        $availability->id,
             priority:         'high',
+            extraData: [
+                'whatsapp_template' => 'leave_approved_denied',
+                'whatsapp_variables' => [$isApproved ? 'Approved by ' : 'Denied by ' . $adminName],
+            ],
         ));
     }
 

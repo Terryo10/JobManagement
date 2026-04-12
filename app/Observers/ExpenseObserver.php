@@ -28,6 +28,10 @@ class ExpenseObserver
             subjectId:      $expense->id,
             priority:       'normal',
             idempotencyKey: "expense.submitted.{$expense->id}",
+            extraData: [
+                'whatsapp_template' => 'expense_submitted',
+                'whatsapp_variables' => [$submitter, $expense->category, $amount, $wo],
+            ],
         ));
     }
 
@@ -70,6 +74,10 @@ class ExpenseObserver
             subjectId:        $expense->id,
             priority:         'high',
             idempotencyKey:   "expense.approved.{$expense->id}",
+            extraData: [
+                'whatsapp_template' => 'expense_approved',
+                'whatsapp_variables' => [$expense->category, $amount, $expense->expense_date?->format('d M Y') ?? 'Recently', $approverName],
+            ],
         ));
     }
 
@@ -96,6 +104,10 @@ class ExpenseObserver
             subjectId:        $expense->id,
             priority:         'high',
             idempotencyKey:   "expense.rejected.{$expense->id}",
+            extraData: [
+                'whatsapp_template' => 'expense_rejected',
+                'whatsapp_variables' => [$expense->rejection_reason ?? 'No reason provided'],
+            ],
         ));
     }
 

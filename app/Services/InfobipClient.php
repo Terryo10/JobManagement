@@ -53,16 +53,25 @@ class InfobipClient
      */
     public function sendWhatsAppTemplate(string $to, string $templateName, array $placeholders = []): array
     {
+        $senderId = config('services.infobip.whatsapp_sender');
+        $cleanSenderId = ltrim($senderId, '+');
+
         return $this->http
             ->post('/whatsapp/1/message/template', [
-                'from'    => config('services.infobip.whatsapp_sender'),
-                'to'      => $to,
-                'content' => [
-                    'templateName' => $templateName,
-                    'templateData' => [
-                        'body' => ['placeholders' => $placeholders],
+                'messages' => [
+                    [
+                        'from'    => $cleanSenderId,
+                        'to'      => $to,
+                        'content' => [
+                            'templateName' => $templateName,
+                            'templateData' => [
+                                'body' => [
+                                    'placeholders' => empty($placeholders) ? [] : array_values($placeholders),
+                                ],
+                            ],
+                            'language' => 'en',
+                        ],
                     ],
-                    'language' => 'en',
                 ],
             ])
             ->throw()

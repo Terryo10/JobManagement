@@ -67,11 +67,57 @@ class SendMessageAction extends Action
                     ->required()
                     ->visible(fn (Get $get) => in_array('mail', (array) $get('channels'))),
 
+                Select::make('whatsapp_template')
+                    ->label('WhatsApp Template')
+                    ->options([
+                        'financial_approval_request' => 'Financial Approval Request',
+                        'invoice_alert' => 'Invoice Alert',
+                        'work_order_assigned' => 'Work Order Assigned',
+                        'quotation_status_update' => 'Quotation Status Update',
+                        'company_announcement' => 'Company Announcement',
+                        'action_required_alert' => 'Action Required Alert',
+                        'completion_success' => 'Completion Success',
+                        'welcome_onboarding' => 'Welcome Onboarding',
+                    ])
+                    ->live()
+                    ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')))
+                    ->visible(fn (Get $get) => in_array('whatsapp', (array) $get('channels'))),
+
+                TextInput::make('variable_1')
+                    ->label('Variable 1')
+                    ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')))
+                    ->visible(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert', 'work_order_assigned', 'quotation_status_update', 
+                        'company_announcement', 'action_required_alert', 'completion_success', 'welcome_onboarding'
+                    ]))
+                    ->helperText('First placeholder (e.g. name, ID, or amount)'),
+
+                TextInput::make('variable_2')
+                    ->label('Variable 2')
+                    ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert', 'work_order_assigned', 'quotation_status_update', 'action_required_alert'
+                    ]))
+                    ->visible(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert', 'work_order_assigned', 'quotation_status_update', 'action_required_alert'
+                    ]))
+                    ->helperText('Second placeholder (e.g. status or date)'),
+
+                TextInput::make('variable_3')
+                    ->label('Variable 3')
+                    ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert'
+                    ]))
+                    ->visible(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert'
+                    ]))
+                    ->helperText('Third placeholder (e.g. link or amount)'),
+
                 Textarea::make('message')
                     ->label('Message')
                     ->placeholder('Type your message here…')
                     ->rows(4)
-                    ->required(),
+                    ->required(fn (Get $get) => !in_array('whatsapp', (array) $get('channels')))
+                    ->hidden(fn (Get $get) => in_array('whatsapp', (array) $get('channels'))),
             ])
             ->action(function (array $data, Model $record, Action $action) {
                 $recipientUserId = $data['recipient_type'] === 'assigned'
@@ -87,8 +133,28 @@ class SendMessageAction extends Action
                 }
 
                 $channels  = (array) ($data['channels'] ?? ['mail']);
-                $subject   = $data['subject'] ?? $data['message'];
-                $body      = $data['message'];
+                $subject   = $data['subject'] ?? ($data['message'] ?? '');
+                $body      = $data['message'] ?? '';
+
+                $whatsappTemplate  = $data['whatsapp_template'] ?? null;
+                $whatsappVariables = [];
+
+                if (in_array('whatsapp', $channels) && $whatsappTemplate) {
+                    $varsCount = match ($whatsappTemplate) {
+                        'financial_approval_request', 'invoice_alert' => 3,
+                        'work_order_assigned', 'quotation_status_update', 'action_required_alert' => 2,
+                        default => 1,
+                    };
+                    for ($i = 1; $i <= $varsCount; $i++) {
+                        $whatsappVariables[] = $data["variable_{$i}"] ?? '';
+                    }
+                }
+
+                $extraData = [];
+                if ($whatsappTemplate) {
+                    $extraData['whatsapp_template'] = $whatsappTemplate;
+                    $extraData['whatsapp_variables'] = $whatsappVariables;
+                }
 
                 // Build the record URL for the action link
                 $actionUrl  = null;
@@ -110,6 +176,7 @@ class SendMessageAction extends Action
                     subjectType:     get_class($record),
                     subjectId:       $record->getKey(),
                     idempotencyKey:  $idempotencyKey,
+                    extraData:       $extraData,
                 );
 
                 $errors = [];

@@ -25,6 +25,10 @@ class TaskObserver
             subjectType:      Task::class,
             subjectId:        $task->id,
             priority:         'high',
+            extraData: [
+                'whatsapp_template' => 'task_assigned',
+                'whatsapp_variables' => [$task->title],
+            ],
         ));
     }
 
@@ -49,6 +53,10 @@ class TaskObserver
                     recipientUserIds: [$oldClaimedByUserId],
                     subjectType:    Task::class,
                     subjectId:      $task->id,
+                    extraData: [
+                        'whatsapp_template' => 'task_released',
+                        'whatsapp_variables' => [$task->title],
+                    ],
                 ));
             } else {
                 $reasonText = $task->unassignmentReason ? "\nReason: {$task->unassignmentReason}" : "";
@@ -62,6 +70,10 @@ class TaskObserver
                     subjectType:      Task::class,
                     subjectId:        $task->id,
                     priority:         'high',
+                    extraData: [
+                        'whatsapp_template' => 'task_unassigned',
+                        'whatsapp_variables' => [$task->title, $task->unassignmentReason ?? 'Reassigned'],
+                    ],
                 ));
             }
         }
@@ -89,6 +101,12 @@ class TaskObserver
                 recipientUserIds: $recipientUserIds,
                 subjectType:    Task::class,
                 subjectId:      $task->id,
+                extraData: [
+                    'whatsapp_template' => $isSelfClaim ? 'task_claimed' : 'task_assigned',
+                    'whatsapp_variables' => $isSelfClaim 
+                        ? [$task->title, $assignee?->name ?? 'Staff']
+                        : [$task->title],
+                ],
             ));
         }
 
@@ -105,6 +123,10 @@ class TaskObserver
                 subjectType:      Task::class,
                 subjectId:        $task->id,
                 priority:         'high',
+                extraData: [
+                    'whatsapp_template' => 'task_assigned',
+                    'whatsapp_variables' => [$task->title],
+                ],
             ));
         }
 
@@ -122,6 +144,10 @@ class TaskObserver
                     recipientUserIds: [$workOrder->created_by],
                     subjectType:      Task::class,
                     subjectId:        $task->id,
+                    extraData: [
+                        'whatsapp_template' => 'task_status_update',
+                        'whatsapp_variables' => [$task->title, $task->getOriginal('status'), $task->status],
+                    ],
                 ));
             }
 
@@ -143,6 +169,10 @@ class TaskObserver
                         subjectType:    Task::class,
                         subjectId:      $task->id,
                         priority:       'high',
+                        extraData: [
+                            'whatsapp_template' => 'task_all_completed',
+                            'whatsapp_variables' => [$workOrder->reference_number],
+                        ],
                     ));
                 }
             }
