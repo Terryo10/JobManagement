@@ -34,10 +34,11 @@ class InfobipWhatsAppChannel implements NotificationChannelContract
 
         try {
             if ($templateName) {
+                $placeholders = $event->extraData['whatsapp_variables'] ?? [$event->title, $event->body];
                 $response = $this->client->sendWhatsAppTemplate(
                     to:           $phone,
                     templateName: $templateName,
-                    placeholders: [$event->title, $event->body],
+                    placeholders: $placeholders,
                 );
             } else {
                 $response = $this->client->sendWhatsAppText(
