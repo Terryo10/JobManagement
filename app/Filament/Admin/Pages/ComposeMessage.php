@@ -94,11 +94,57 @@ class ComposeMessage extends Page implements HasForms
                     ->required()
                     ->visible(fn (Get $get) => in_array('mail', (array) $get('channels'))),
 
+                Select::make('whatsapp_template')
+                    ->label('WhatsApp Template')
+                    ->options([
+                        'financial_approval_request' => 'Financial Approval Request',
+                        'invoice_alert' => 'Invoice Alert',
+                        'work_order_assigned' => 'Work Order Assigned',
+                        'quotation_status_update' => 'Quotation Status Update',
+                        'company_announcement' => 'Company Announcement',
+                        'action_required_alert' => 'Action Required Alert',
+                        'completion_success' => 'Completion Success',
+                        'welcome_onboarding' => 'Welcome Onboarding',
+                    ])
+                    ->live()
+                    ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')))
+                    ->visible(fn (Get $get) => in_array('whatsapp', (array) $get('channels'))),
+
+                TextInput::make('variable_1')
+                    ->label('Variable 1')
+                    ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')))
+                    ->visible(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert', 'work_order_assigned', 'quotation_status_update', 
+                        'company_announcement', 'action_required_alert', 'completion_success', 'welcome_onboarding'
+                    ]))
+                    ->helperText('First placeholder (e.g. name, ID, or amount)'),
+
+                TextInput::make('variable_2')
+                    ->label('Variable 2')
+                    ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert', 'work_order_assigned', 'quotation_status_update', 'action_required_alert'
+                    ]))
+                    ->visible(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert', 'work_order_assigned', 'quotation_status_update', 'action_required_alert'
+                    ]))
+                    ->helperText('Second placeholder (e.g. status or date)'),
+
+                TextInput::make('variable_3')
+                    ->label('Variable 3')
+                    ->required(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert'
+                    ]))
+                    ->visible(fn (Get $get) => in_array('whatsapp', (array) $get('channels')) && in_array($get('whatsapp_template'), [
+                        'financial_approval_request', 'invoice_alert'
+                    ]))
+                    ->helperText('Third placeholder (e.g. link or amount)'),
+
                 Textarea::make('message')
                     ->label('Message')
                     ->placeholder('Type your message here…')
                     ->rows(5)
-                    ->required(),
+                    ->required(fn (Get $get) => !in_array('whatsapp', (array) $get('channels')))
+                    ->hidden(fn (Get $get) => in_array('whatsapp', (array) $get('channels'))),
 
                 TextInput::make('action_url')
                     ->label('Link URL (optional)')
@@ -118,12 +164,32 @@ class ComposeMessage extends Page implements HasForms
     {
         $data = $this->form->getState();
 
-        $recipientIds = $data['recipient_ids'] ?? [];
-        $channels     = (array) ($data['channels'] ?? ['mail']);
-        $subject      = $data['subject'] ?? $data['message'];
-        $body         = $data['message'];
-        $actionUrl    = $data['action_url'] ?? null;
-        $actionText   = filled($actionUrl) ? ($data['action_text'] ?? 'View') : null;
+        $recipientIds      = $data['recipient_ids'] ?? [];
+        $channels          = (array) ($data['channels'] ?? ['mail']);
+        $subject           = $data['subject'] ?? ($data['message'] ?? '');
+        $body              = $data['message'] ?? '';
+        $actionUrl         = $data['action_url'] ?? null;
+        $actionText        = filled($actionUrl) ? ($data['action_text'] ?? 'View') : null;
+
+        $whatsappTemplate  = $data['whatsapp_template'] ?? null;
+        $whatsappVariables = [];
+
+        if (in_array('whatsapp', $channels) && $whatsappTemplate) {
+            $varsCount = match ($whatsappTemplate) {
+                'financial_approval_request', 'invoice_alert' => 3,
+                'work_order_assigned', 'quotation_status_update', 'action_required_alert' => 2,
+                default => 1,
+            };
+            for ($i = 1; $i <= $varsCount; $i++) {
+                $whatsappVariables[] = $data["variable_{$i}"] ?? '';
+            }
+        }
+
+        $extraData = [];
+        if ($whatsappTemplate) {
+            $extraData['whatsapp_template'] = $whatsappTemplate;
+            $extraData['whatsapp_variables'] = $whatsappVariables;
+        }
 
         if (empty($recipientIds)) {
             Notification::make()->title('Please select at least one recipient.')->warning()->send();
@@ -142,6 +208,7 @@ class ComposeMessage extends Page implements HasForms
                 actionText:      $actionText,
                 recipientUserIds: [$userId],
                 idempotencyKey:  $baseKey . '.' . $userId,
+                extraData:       $extraData,
             );
 
             foreach ($channels as $channel) {

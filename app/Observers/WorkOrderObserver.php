@@ -23,6 +23,10 @@ class WorkOrderObserver
             recipientRoles: ['super_admin', 'manager'],
             subjectType:    WorkOrder::class,
             subjectId:      $workOrder->id,
+            extraData: [
+                'whatsapp_template' => 'work_order_created',
+                'whatsapp_variables' => [$workOrder->reference_number, $workOrder->title],
+            ],
         ));
 
         // Notify assigned department head
@@ -43,6 +47,10 @@ class WorkOrderObserver
                     subjectType:      WorkOrder::class,
                     subjectId:        $workOrder->id,
                     priority:         'high',
+                    extraData: [
+                        'whatsapp_template' => 'work_order_dept_assigned',
+                        'whatsapp_variables' => [$workOrder->reference_number, $workOrder->title],
+                    ],
                 ));
             }
         }
@@ -67,6 +75,10 @@ class WorkOrderObserver
                 recipientUserIds: [$releasedById],
                 subjectType:    WorkOrder::class,
                 subjectId:      $workOrder->id,
+                extraData: [
+                    'whatsapp_template' => 'work_order_released',
+                    'whatsapp_variables' => [$workOrder->reference_number],
+                ],
             ));
         }
 
@@ -93,6 +105,12 @@ class WorkOrderObserver
                 recipientUserIds: $recipientUserIds,
                 subjectType:    WorkOrder::class,
                 subjectId:      $workOrder->id,
+                extraData: [
+                    'whatsapp_template' => $isSelfClaim ? 'work_order_claimed' : 'work_order_assigned',
+                    'whatsapp_variables' => $isSelfClaim 
+                        ? [$workOrder->reference_number, $assignee?->name ?? 'Staff']
+                        : [$workOrder->reference_number, $workOrder->deadline?->format('d M Y') ?? 'Immediately'],
+                ],
             ));
         }
 
@@ -125,6 +143,10 @@ class WorkOrderObserver
                     recipientUserIds: array_unique($recipientIds),
                     subjectType:      WorkOrder::class,
                     subjectId:        $workOrder->id,
+                    extraData: [
+                        'whatsapp_template' => 'work_order_status_update',
+                        'whatsapp_variables' => [$workOrder->reference_number, $oldStatus, $newStatus],
+                    ],
                 ));
             }
         }
@@ -144,6 +166,10 @@ class WorkOrderObserver
                     subjectType:    WorkOrder::class,
                     subjectId:      $workOrder->id,
                     priority:       'high',
+                    extraData: [
+                        'whatsapp_template' => 'work_order_budget_alert',
+                        'whatsapp_variables' => [$workOrder->reference_number, (string) round($percentage)],
+                    ],
                 ));
             }
         }

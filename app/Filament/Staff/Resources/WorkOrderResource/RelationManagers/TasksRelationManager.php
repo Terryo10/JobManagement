@@ -148,7 +148,7 @@ class TasksRelationManager extends RelationManager
                     ->icon('heroicon-o-hand-raised')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn ($record) => $record->claimed_by === null)
+                    ->visible(fn ($record) => $record->claimed_by === null && $record->status !== 'completed')
                     ->action(function ($record) {
                         $success = $record->claim(auth()->user());
                         if ($success) {
@@ -162,7 +162,7 @@ class TasksRelationManager extends RelationManager
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->color('gray')
                     ->requiresConfirmation()
-                    ->visible(fn ($record) => $record->claimed_by === auth()->id())
+                    ->visible(fn ($record) => $record->claimed_by === auth()->id() && $record->status !== 'completed')
                     ->action(function ($record) {
                         $record->release();
                         Notification::make()->title('Task released back to queue.')->success()->send();
@@ -174,7 +174,8 @@ class TasksRelationManager extends RelationManager
                     ->url(fn ($record) => \App\Filament\Staff\Resources\TaskResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make()
-                    ->label('Update'),
+                    ->label('Update')
+                    ->visible(fn ($record) => $record->status !== 'completed'),
             ])
             ->defaultSort('deadline');
     }

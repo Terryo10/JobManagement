@@ -20,7 +20,7 @@ class NotificationRouter
         'channel_database'  => true,
         'channel_mail'      => true,
         'channel_sms'       => false,
-        'channel_whatsapp'  => false,
+        'channel_whatsapp'  => true,
     ];
 
     public function __construct(private FilamentDatabaseChannel $database) {}
@@ -94,7 +94,7 @@ class NotificationRouter
             'channel_database' => $configDefaults['channel_database'] ?? true,
             'channel_mail'     => $configDefaults['channel_mail']     ?? true,
             'channel_sms'      => $configDefaults['channel_sms']      ?? false,
-            'channel_whatsapp' => $configDefaults['channel_whatsapp'] ?? false,
+            'channel_whatsapp' => $configDefaults['channel_whatsapp'] ?? true,
         ];
 
         $pref = NotificationPreference::firstOrCreate(
