@@ -39,6 +39,12 @@ return [
         'email_sender'      => env('INFOBIP_EMAIL_SENDER', env('MAIL_FROM_ADDRESS')),
         'sms_sender'        => env('INFOBIP_SMS_SENDER', 'JobMgmt'),
         'whatsapp_sender'   => env('INFOBIP_WHATSAPP_SENDER'),
+        'whatsapp_templates' => [
+            'field_worker_assignment' => [
+                'media_type'   => env('INFOBIP_WA_FIELD_WORKER_MEDIA_TYPE', 'IMAGE'),
+                'fallback_url' => env('INFOBIP_WA_FIELD_WORKER_FALLBACK_URL'),
+            ],
+        ],
     ],
 
     'slack' => [

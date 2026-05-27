@@ -2,6 +2,8 @@
 
 namespace App\Filament\Admin\Resources\TaskResource\RelationManagers;
 
+use App\Jobs\SendFieldWorkerNotificationJob;
+use App\Models\FieldWorker;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -28,6 +30,19 @@ class SubtasksRelationManager extends RelationManager
                 ->default('normal')->required(),
             Forms\Components\TextInput::make('estimated_hours')->numeric()->suffix('hrs'),
             Forms\Components\DatePicker::make('deadline'),
+            Forms\Components\Section::make('Field Workers')
+                ->description('These field workers will be notified via SMS/WhatsApp when the subtask is saved.')
+                ->schema([
+                    Forms\Components\Select::make('fieldWorkers')
+                        ->label('Assign Field Workers')
+                        ->multiple()
+                        ->relationship('fieldWorkers', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->helperText('Hold Ctrl / Cmd to select multiple workers.'),
+                ])
+                ->collapsible()
+                ->collapsed(),
         ]);
     }
 

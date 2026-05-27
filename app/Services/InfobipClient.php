@@ -49,12 +49,32 @@ class InfobipClient
      * @param  string  $to            E.164 phone number
      * @param  string  $templateName  Approved Meta/Infobip template name
      * @param  array   $placeholders  Body placeholder values (positional)
+     * @param  string|null  $mediaUrl  Optional media URL for the template header
+     * @param  string|null  $mediaType Optional media type, e.g. IMAGE, DOCUMENT, VIDEO
      * @return array
      */
-    public function sendWhatsAppTemplate(string $to, string $templateName, array $placeholders = []): array
-    {
+    public function sendWhatsAppTemplate(
+        string $to,
+        string $templateName,
+        array $placeholders = [],
+        ?string $mediaUrl = null,
+        ?string $mediaType = null
+    ): array {
         $senderId = config('services.infobip.whatsapp_sender');
         $cleanSenderId = ltrim($senderId, '+');
+
+        $templateData = [
+            'body' => [
+                'placeholders' => empty($placeholders) ? [] : array_values($placeholders),
+            ],
+        ];
+
+        if ($mediaUrl) {
+            $templateData['header'] = [
+                'type'     => $mediaType ?? 'IMAGE',
+                'mediaUrl' => $mediaUrl,
+            ];
+        }
 
         return $this->http
             ->post('/whatsapp/1/message/template', [
@@ -64,11 +84,7 @@ class InfobipClient
                         'to'      => $to,
                         'content' => [
                             'templateName' => $templateName,
-                            'templateData' => [
-                                'body' => [
-                                    'placeholders' => empty($placeholders) ? [] : array_values($placeholders),
-                                ],
-                            ],
+                            'templateData' => $templateData,
                             'language' => 'en',
                         ],
                     ],

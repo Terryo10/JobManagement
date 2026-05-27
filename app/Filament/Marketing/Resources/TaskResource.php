@@ -32,7 +32,7 @@ class TaskResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->nullable(),
                 Forms\Components\TextInput::make('title')->required()->maxLength(255)->columnSpanFull(),
                 Forms\Components\Select::make('assigned_to')->relationship('assignedTo', 'name')->searchable()->preload(),
                 Forms\Components\Select::make('department_id')->relationship('department', 'name')->searchable()->preload(),

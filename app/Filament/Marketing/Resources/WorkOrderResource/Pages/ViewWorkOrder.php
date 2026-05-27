@@ -14,6 +14,7 @@ class ViewWorkOrder extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\EditAction::make(),
             Actions\Action::make('downloadPdf')
                 ->label('Download PDF')
                 ->icon('heroicon-o-document-arrow-down')
