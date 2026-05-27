@@ -191,6 +191,9 @@ class PurchaseOrderResource extends Resource
                         Notification::make()->title('Requisition rejected. Requester has been notified.')->warning()->send();
                     }),
                 Tables\Actions\ViewAction::make()->iconButton(),
+                Tables\Actions\EditAction::make()
+                    ->iconButton()
+                    ->visible(fn ($record) => $record->status === 'pending_finance_approval'),
                 Tables\Actions\Action::make('downloadPdf')
                     ->label('Download PDF')
                     ->icon('heroicon-o-document-arrow-down')

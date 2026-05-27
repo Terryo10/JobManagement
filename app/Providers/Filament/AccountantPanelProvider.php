@@ -38,12 +38,17 @@ class AccountantPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
                 \App\Filament\Pages\MyNotificationPreferences::class,
+                \App\Filament\Pages\DailyWorkReport::class,
             ])
             ->userMenuItems([
                 \Filament\Navigation\MenuItem::make()
                     ->label('Notification Preferences')
                     ->url(fn (): string => \App\Filament\Pages\MyNotificationPreferences::getUrl())
                     ->icon('heroicon-o-bell-alert'),
+                \Filament\Navigation\MenuItem::make()
+                    ->label('Generate Daily Report')
+                    ->url(fn (): string => \App\Filament\Pages\DailyWorkReport::getUrl())
+                    ->icon('heroicon-o-document-text'),
             ])
             ->discoverWidgets(in: app_path('Filament/Accountant/Widgets'), for: 'App\\Filament\\Accountant\\Widgets')
             ->widgets([])

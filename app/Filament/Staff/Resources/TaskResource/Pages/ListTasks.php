@@ -24,6 +24,8 @@ class ListTasks extends ListRecords
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereNotIn('status', ['completed', 'cancelled'])),
             'completed' => Tab::make('Completed Tasks')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'completed')),
+            'personal' => Tab::make('Personal Tasks')
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereNull('work_order_id')),
         ];
     }
 }

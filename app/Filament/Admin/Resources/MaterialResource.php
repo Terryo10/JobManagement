@@ -45,9 +45,63 @@ class MaterialResource extends Resource
             Tables\Columns\TextColumn::make('unit_cost')->money('USD'),
             Tables\Columns\IconColumn::make('is_active')->boolean(),
         ])
-        ->filters([Tables\Filters\TernaryFilter::make('is_active')])
-        ->actions([Tables\Actions\EditAction::make()])
-        ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
+        ->filters([
+            Tables\Filters\TernaryFilter::make('is_active'),
+        ])
+        ->headerActions([
+            Tables\Actions\Action::make('export_all')
+                ->label('Export All to CSV')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('success')
+                ->action(fn () => self::downloadCsv(Material::with('stockLevel')->get())),
+        ])
+        ->actions([
+            Tables\Actions\EditAction::make(),
+        ])
+        ->bulkActions([
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\BulkAction::make('export_selected')
+                    ->label('Export Selected to CSV')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(fn ($records) => self::downloadCsv($records)),
+
+                Tables\Actions\DeleteBulkAction::make(),
+            ]),
+        ]);
+    }
+
+    public static function downloadCsv($records)
+    {
+        $csv = [];
+        $csv[] = ['Name', 'SKU', 'Category', 'Unit', 'In Stock', 'Min Stock Level', 'Unit Cost (USD)', 'Status'];
+
+        foreach ($records as $record) {
+            $csv[] = [
+                $record->name,
+                $record->sku,
+                $record->category ?? '—',
+                $record->unit,
+                $record->stockLevel?->current_quantity ?? 0,
+                $record->minimum_stock_level ?? 0,
+                $record->unit_cost ?? 0,
+                $record->is_active ? 'Active' : 'Inactive',
+            ];
+        }
+
+        $output = '';
+        foreach ($csv as $row) {
+            $fh = fopen('php://temp', 'r+');
+            fputcsv($fh, $row);
+            rewind($fh);
+            $output .= stream_get_contents($fh);
+            fclose($fh);
+        }
+
+        return response()->streamDownload(function () use ($output) {
+            echo $output;
+        }, 'inventory-export-' . now()->format('Y-m-d') . '.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
     }
 
     public static function getRelations(): array

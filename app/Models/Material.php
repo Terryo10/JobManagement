@@ -40,4 +40,14 @@ class Material extends Model
     {
         return $this->hasMany(PurchaseOrderItem::class);
     }
+
+    public function inventoryRequisitions(): HasMany
+    {
+        return $this->hasMany(InventoryRequisition::class);
+    }
+
+    public function inventoryTransactions(): HasMany
+    {
+        return $this->hasMany(InventoryTransaction::class);
+    }
 }

@@ -11,12 +11,106 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\Proposal;
 use App\Models\PurchaseOrder;
+use App\Models\TaskTimeLog;
+use App\Models\ActivityLog;
+use App\Models\Expense;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class AiReportService
 {
+    public function generateDailyWorkReport(User $user, string $date, string $customInstructions = ''): string
+    {
+        $timeLogs = TaskTimeLog::where('user_id', $user->id)
+            ->whereDate('started_at', $date)
+            ->with('task:id,title,work_order_id')
+            ->get();
+
+        $activityLogs = ActivityLog::where('user_id', $user->id)
+            ->whereDate('created_at', $date)
+            ->get();
+
+        $tasksCompleted = Task::where('assigned_to', $user->id)
+            ->whereDate('completed_at', $date)
+            ->with('workOrder:id,reference_number')
+            ->get();
+
+        $tasksClaimed = Task::where('assigned_to', $user->id)
+            ->whereDate('claimed_at', $date)
+            ->get();
+
+        $expenses = Expense::where('submitted_by', $user->id)
+            ->whereDate('created_at', $date)
+            ->get();
+
+        $payload = [
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'department' => $user->department?->name ?? 'N/A',
+            ],
+            'date' => $date,
+            'time_logs' => $timeLogs->map(fn ($log) => [
+                'task' => $log->task?->title ?? 'N/A',
+                'work_order_ref' => $log->task?->workOrder?->reference_number ?? 'N/A',
+                'duration_minutes' => $log->duration_minutes,
+                'notes' => $log->notes,
+                'started_at' => $log->started_at?->toTimeString(),
+            ]),
+            'activity_logs' => $activityLogs->map(fn ($log) => [
+                'action' => $log->action,
+                'subject_type' => $log->getShortSubjectType(),
+                'subject_label' => $log->subject_label,
+                'time' => $log->created_at?->toTimeString(),
+            ]),
+            'tasks_completed' => $tasksCompleted->map(fn ($task) => [
+                'title' => $task->title,
+                'work_order_ref' => $task->workOrder?->reference_number ?? 'N/A',
+                'completed_at' => $task->completed_at?->toTimeString(),
+            ]),
+            'tasks_claimed_or_assigned' => $tasksClaimed->map(fn ($task) => [
+                'title' => $task->title,
+                'claimed_at' => $task->claimed_at?->toTimeString(),
+                'status' => $task->status,
+            ]),
+            'expenses_logged' => $expenses->map(fn ($exp) => [
+                'category' => $exp->category,
+                'amount' => $exp->amount,
+                'currency' => $exp->currency,
+                'description' => $exp->description,
+            ]),
+        ];
+
+        $payloadJson = json_encode($payload, JSON_PRETTY_PRINT);
+
+        $systemPrompt = <<<PROMPT
+You are a Polished Executive Productivity Assistant. Your job is to transform raw system logs of an employee's day into a highly readable, elegant, and professional Markdown daily work report.
+
+Please structure the report with the following exact sections (using clear Markdown headings):
+
+1. **Day Summary** - A single high-level, sophisticated sentence summarizing the main focus and achievements of the day.
+2. **Tasks & Time Logged** - A structured breakdown of tasks worked on, time logged, and specific progress (referencing Work Order numbers where possible). Use clean tables or nested bullet points.
+3. **Expenses & Operations** - Summary of any expenses filed or administrative tasks performed. If none, briefly note "No operational expenses logged."
+4. **System Activity** - A digested, human-readable summary of actions taken in the system (e.g. "Claimed a new task for Media Production", "Updated a work order status"). Make it sound meaningful rather than raw log lines.
+5. **Next Steps / Blockers** - Any ongoing work, potential delays, or goals for tomorrow.
+
+Guidelines:
+- Maintain a highly professional, executive tone.
+- Do not show any raw JSON, database IDs, or developer-facing terms.
+- Use clear bullet points, bold emphasis, and neat Markdown formatting.
+- If there is very little or no activity on a given date, politely draft a report highlighting that it was a low-system-activity day, focus on administrative work, and outline any next steps/blockers or custom instructions.
+PROMPT;
+
+        $prompt = $systemPrompt . "\n\n## Raw Employee Activity Data (Date: {$date})\n\n```json\n{$payloadJson}\n```";
+
+        if (!empty($customInstructions)) {
+            $prompt .= "\n\n## Special Instructions from the Employee:\n\n{$customInstructions}";
+        }
+
+        return $this->callGemini($prompt);
+    }
+
     private string $apiKey;
     private string $model;
     private string $apiUrl;
