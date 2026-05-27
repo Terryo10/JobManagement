@@ -31,6 +31,14 @@ class InfobipClient
      */
     public function sendSms(string $to, string $text): array
     {
+        // Check global SMS kill switch
+        if (!\App\Models\SystemSetting::smsEnabled()) {
+            \Illuminate\Support\Facades\Log::info('InfobipClient: SMS sending is disabled via admin setting — skipping.', [
+                'to' => $to,
+            ]);
+            return ['messages' => [['messageId' => 'sms-disabled']]];
+        }
+
         return $this->http
             ->post('/sms/2/text/advanced', [
                 'messages' => [[
