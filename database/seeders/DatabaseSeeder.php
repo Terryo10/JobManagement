@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\BusinessReport;
 use App\Models\Client;
 use App\Models\Department;
+use App\Models\DesignBrief;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Lead;
@@ -401,6 +402,47 @@ class DatabaseSeeder extends Seeder
         BusinessReport::firstOrCreate(
             ['title' => 'Q1 Growth Strategy'],
             ['type' => 'growth_strategy', 'client_id' => null, 'content' => '<p>Focus on energy sector...</p>', 'prepared_by' => $marketingUser->id, 'status' => 'draft']
+        );
+
+        // ── Design Briefs ────────────────────────────────
+        DesignBrief::firstOrCreate(
+            ['title' => 'Coca-Cola Summer Campaign Billboard Design'],
+            [
+                'client_id' => $client1->id,
+                'work_order_id' => $wo1->id,
+                'created_by' => $manager->id,
+                'designer_id' => $deptHead->id,
+                'status' => 'in_progress',
+                'priority' => 'high',
+                'objective' => 'Create a vibrant, refreshing summer campaign billboard design that instantly grabs attention at the high-traffic Main Street & 2nd Avenue intersection. The design should showcase iced Coca-Cola bottles with bold African summer elements.',
+                'target_audience' => 'Young adults, commuters, and families in Harare.',
+                'deliverables' => 'High-resolution print-ready PDF with crop marks (6m x 3m), raw layered Adobe Illustrator (.ai) file, and a 1200x630px digital mockup.',
+                'dimensions_specifications' => '6000mm x 3000mm, CMYK color mode, minimum 150 DPI at full size.',
+                'copy_text' => 'Share a Cold Coca-Cola This Summer! #TasteTheFeeling',
+                'branding_guidelines' => 'Use primary red (#E31B23) and classic script typography. Ensure logo is placed in the upper-right corner and occupies exactly 15% of total width. Do not stretch or distort the logo.',
+                'notes_references' => 'Refer to the 2025 Summer global campaign visual guides. Keep background clean to maintain readability for high-speed commuters.',
+                'deadline' => now()->addDays(5),
+            ]
+        );
+
+        DesignBrief::firstOrCreate(
+            ['title' => 'Old Mutual Corporate Wall Wrap Artwork'],
+            [
+                'client_id' => $client2->id,
+                'work_order_id' => $wo2->id,
+                'created_by' => $marketingUser->id,
+                'designer_id' => null, // Unassigned queue!
+                'status' => 'pending',
+                'priority' => 'normal',
+                'objective' => 'Design modern corporate wall wrap graphics for Old Mutual\'s new Harare head offices. The artwork needs to integrate Old Mutual\'s corporate colors with abstract African landscape line-art representing growth and stability.',
+                'target_audience' => 'Visiting corporate clients, stakeholders, and internal employees.',
+                'deliverables' => 'Print-ready vector PDF templates for three office walls.',
+                'dimensions_specifications' => 'Wall A: 4.5m x 2.8m, Wall B: 3.2m x 2.8m, Wall C: 6m x 2.8m. Pantone color matching.',
+                'copy_text' => 'Investing in Zimbabwe\'s Future. Together, we grow.',
+                'branding_guidelines' => 'Incorporate Old Mutual Green (Pantone 356C) and Gold. Font must be official corporate sans-serif (Inter/Montserrat).',
+                'notes_references' => 'Visual inspiration can be found in Old Mutual global offices brand assets pack.',
+                'deadline' => now()->addDays(12),
+            ]
         );
 
         // ── Output ───────────────────────────────────────

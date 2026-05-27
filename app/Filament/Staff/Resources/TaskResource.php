@@ -48,7 +48,7 @@ class TaskResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->nullable(),
                 Forms\Components\TextInput::make('title')->required()->maxLength(255)->columnSpanFull(),
                 Forms\Components\Select::make('assigned_to')
                     ->label('Assign To')
@@ -116,14 +116,14 @@ class TaskResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\Action::make('claim')
+                 Tables\Actions\Action::make('claim')
                     ->label('Claim Task')
                     ->icon('heroicon-o-hand-raised')
                     ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading('Claim this task?')
                     ->modalDescription('You will be assigned to this task and it will move to "In Progress".')
-                    ->visible(fn ($record) => $record->claimed_by === null && $record->status !== 'completed')
+                    ->visible(fn ($record) => $record->work_order_id !== null && $record->claimed_by === null && $record->status !== 'completed')
                     ->action(function ($record) {
                         $success = $record->claim(auth()->user());
                         if ($success) {
@@ -132,20 +132,20 @@ class TaskResource extends Resource
                             Notification::make()->title('This task was already claimed by someone else.')->danger()->send();
                         }
                     }),
-                Tables\Actions\Action::make('release')
+                 Tables\Actions\Action::make('release')
                     ->label('Release')
                     ->icon('heroicon-o-arrow-uturn-left')
                     ->color('gray')
                     ->requiresConfirmation()
                     ->modalHeading('Release this task?')
                     ->modalDescription('This task will go back to the queue for others to claim.')
-                    ->visible(fn ($record) => $record->claimed_by === auth()->id() && $record->status !== 'completed')
+                    ->visible(fn ($record) => $record->work_order_id !== null && $record->claimed_by === auth()->id() && $record->status !== 'completed')
                     ->action(function ($record) {
                         $record->release();
                         Notification::make()->title('Task released back to queue.')->success()->send();
                     }),
                 Tables\Actions\EditAction::make()->label('Update')
-                    ->visible(fn ($record) => $record->claimed_by === auth()->id() && $record->status !== 'completed'),
+                    ->visible(fn ($record) => ($record->work_order_id === null || $record->claimed_by === auth()->id()) && $record->status !== 'completed'),
             ])
             ->defaultSort('deadline');
     }

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -131,5 +132,15 @@ class Task extends Model
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    /**
+     * Field workers (non-user workers) assigned to this task.
+     */
+    public function fieldWorkers(): BelongsToMany
+    {
+        return $this->belongsToMany(FieldWorker::class, 'field_worker_task')
+                    ->withPivot('assigned_by', 'assigned_at', 'notes')
+                    ->withTimestamps();
     }
 }
