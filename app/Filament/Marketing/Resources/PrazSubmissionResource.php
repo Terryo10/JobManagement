@@ -29,82 +29,22 @@ class PrazSubmissionResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Submission Details')
-                ->description('Tender and procurement information')
+                ->description('Provide the description, optional client, and internal notes.')
                 ->icon('heroicon-o-building-library')
                 ->schema([
-                    Forms\Components\TextInput::make('title')
+                    Forms\Components\RichEditor::make('description')
+                        ->label('Submission Description')
                         ->required()
-                        ->maxLength(255)
-                        ->columnSpanFull()
-                        ->placeholder('e.g. Billboard Tender – Harare CBD'),
-                    Forms\Components\TextInput::make('tender_number')
-                        ->label('Tender / Bid Number')
-                        ->maxLength(100)
-                        ->placeholder('e.g. PRAZ/2026/GOV/001'),
-                    Forms\Components\Select::make('category')
-                        ->options([
-                            'goods'       => 'Goods',
-                            'services'    => 'Services',
-                            'works'       => 'Works',
-                            'consultancy' => 'Consultancy',
-                        ])
-                        ->default('services')
-                        ->required(),
-                    Forms\Components\TextInput::make('procuring_entity')
-                        ->label('Procuring Entity')
-                        ->required()
-                        ->maxLength(255)
-                        ->placeholder('e.g. Ministry of Information, ZINARA, Ecocash'),
+                        ->columnSpanFull(),
                     Forms\Components\Select::make('client_id')
                         ->relationship('client', 'company_name')
                         ->searchable()
                         ->preload()
-                        ->hint('Optional — if submitting on behalf of a client'),
-                    Forms\Components\TextInput::make('value')
-                        ->label('Bid Value')
-                        ->numeric()
-                        ->prefix('$')
-                        ->maxValue(999999999.99),
-                    Forms\Components\TextInput::make('currency')
-                        ->default('USD')
-                        ->maxLength(10),
-                    Forms\Components\DateTimePicker::make('submission_deadline')
-                        ->label('Submission Deadline')
-                        ->required()
-                        ->native(false)
-                        ->displayFormat('d M Y, H:i'),
-                    Forms\Components\Select::make('status')
-                        ->options([
-                            'draft'        => 'Draft',
-                            'submitted'    => 'Submitted',
-                            'under_review' => 'Under Review',
-                            'approved'     => 'Approved',
-                            'rejected'     => 'Rejected',
-                            'expired'      => 'Expired',
-                        ])
-                        ->default('draft')
-                        ->required(),
-                    Forms\Components\DateTimePicker::make('submitted_at')
-                        ->label('Date Submitted')
-                        ->native(false)
-                        ->displayFormat('d M Y, H:i')
-                        ->visible(fn (Forms\Get $get) => in_array($get('status'), ['submitted', 'under_review', 'approved', 'rejected'])),
-                ])->columns(2),
-
-            Forms\Components\Section::make('Description & Notes')
-                ->icon('heroicon-o-document-text')
-                ->schema([
-                    Forms\Components\RichEditor::make('description')
-                        ->label('Submission Description')
+                        ->hint('Optional — if submitting on behalf of a client')
                         ->columnSpanFull(),
-                    Forms\Components\Textarea::make('outcome_notes')
-                        ->label('Outcome / Feedback Notes')
-                        ->rows(3)
-                        ->columnSpanFull()
-                        ->visible(fn (Forms\Get $get) => in_array($get('status'), ['approved', 'rejected'])),
                     Forms\Components\Textarea::make('notes')
                         ->label('Internal Notes')
-                        ->rows(2)
+                        ->rows(4)
                         ->columnSpanFull(),
                 ]),
 
@@ -137,25 +77,16 @@ class PrazSubmissionResource extends Resource
                     ->sortable()
                     ->weight('bold')
                     ->color('primary'),
-                Tables\Columns\TextColumn::make('title')
+                Tables\Columns\TextColumn::make('description')
+                    ->searchable()
+                    ->limit(50)
+                    ->html()
+                    ->tooltip(fn ($record) => strip_tags($record->description)),
+                Tables\Columns\TextColumn::make('client.company_name')
+                    ->label('Client')
                     ->searchable()
                     ->sortable()
-                    ->limit(40)
-                    ->tooltip(fn ($record) => $record->title),
-                Tables\Columns\TextColumn::make('procuring_entity')
-                    ->label('Procuring Entity')
-                    ->searchable()
-                    ->sortable()
-                    ->limit(30),
-                Tables\Columns\TextColumn::make('category')
-                    ->badge()
-                    ->color(fn ($state) => match ($state) {
-                        'goods'       => 'info',
-                        'services'    => 'success',
-                        'works'       => 'warning',
-                        'consultancy' => 'gray',
-                        default       => 'gray',
-                    }),
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn ($state) => match ($state) {
@@ -173,16 +104,6 @@ class PrazSubmissionResource extends Resource
                         'expired'  => 'heroicon-o-clock',
                         default    => null,
                     }),
-                Tables\Columns\TextColumn::make('submission_deadline')
-                    ->label('Deadline')
-                    ->dateTime('d M Y, H:i')
-                    ->sortable()
-                    ->color(fn ($record) => $record->is_overdue ? 'danger' : null)
-                    ->icon(fn ($record) => $record->is_overdue ? 'heroicon-o-exclamation-triangle' : null)
-                    ->description(fn ($record) => $record->is_overdue ? 'OVERDUE' : null),
-                Tables\Columns\TextColumn::make('value')
-                    ->money(fn ($record) => $record->currency)
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('submitted_at')
                     ->label('Submitted')
                     ->dateTime('d M Y')
@@ -220,11 +141,13 @@ class PrazSubmissionResource extends Resource
                     ->label('Overdue Only')
                     ->queries(
                         true: fn ($query) => $query
+                            ->whereNotNull('submission_deadline')
                             ->where('submission_deadline', '<', now())
                             ->whereNotIn('status', ['submitted', 'under_review', 'approved', 'rejected']),
                         false: fn ($query) => $query
                             ->where(function ($q) {
-                                $q->where('submission_deadline', '>=', now())
+                                $q->whereNull('submission_deadline')
+                                  ->orWhere('submission_deadline', '>=', now())
                                   ->orWhereIn('status', ['submitted', 'under_review', 'approved', 'rejected']);
                             }),
                     ),
