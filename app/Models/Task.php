@@ -140,7 +140,7 @@ class Task extends Model
     public function fieldWorkers(): BelongsToMany
     {
         return $this->belongsToMany(FieldWorker::class, 'field_worker_task')
-                    ->withPivot('assigned_by', 'assigned_at', 'notes')
+                    ->withPivot('assigned_by', 'assigned_at', 'notes', 'completed_at', 'deadline')
                     ->withTimestamps();
     }
 }

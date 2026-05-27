@@ -127,6 +127,22 @@ class DesignBriefResource extends Resource
                     ])->columns(1),
                 ])->columnSpan(3),
             ]),
+            Forms\Components\Section::make('Attachments')
+                ->icon('heroicon-o-paper-clip')
+                ->schema([
+                    Forms\Components\FileUpload::make('attachments')
+                        ->label('Upload Files')
+                        ->disk('contabo')
+                        ->directory('documents/design-briefs')
+                        ->visibility('private')
+                        ->acceptedFileTypes(\App\Support\DocumentFileTypes::all())
+                        ->maxSize(\App\Support\DocumentFileTypes::SIZE_50MB)
+                        ->multiple()
+                        ->reorderable()
+                        ->storeFileNamesIn('attachment_names')
+                        ->placeholder('Drag & drop your files here or Browse'),
+                ])
+                ->visibleOn('create'),
         ]);
     }
 

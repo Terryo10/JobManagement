@@ -32,6 +32,8 @@ class SendFieldWorkerNotificationJob implements ShouldQueue
     public function __construct(
         public readonly int $fieldWorkerId,
         public readonly int $taskId,
+        public readonly string $instructions = 'Please refer to your supervisor for details.',
+        public readonly ?string $deadline = null,
     ) {}
 
     public function handle(FieldWorkerNotificationService $service): void
@@ -47,7 +49,7 @@ class SendFieldWorkerNotificationJob implements ShouldQueue
             return;
         }
 
-        $service->notifyAssigned($worker, $task);
+        $service->notifyAssigned($worker, $task, $this->instructions, $this->deadline);
     }
 
     public function failed(\Throwable $e): void

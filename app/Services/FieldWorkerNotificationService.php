@@ -19,28 +19,32 @@ class FieldWorkerNotificationService
      * The Infobip WhatsApp template name.
      * Must be registered and approved in your Infobip dashboard before use.
      */
-    public const WHATSAPP_TEMPLATE = 'field_worker_assignment';
+    public const WHATSAPP_TEMPLATE = 'field_worker_assignment_v2';
 
     public function __construct(protected InfobipClient $client) {}
 
     /**
      * Notify a field worker that they have been assigned to a task.
-     * Fires both SMS (immediate) and WhatsApp template (requires prior approval).
+     * Fires SMS, WhatsApp, and Email if available.
      */
-    public function notifyAssigned(FieldWorker $worker, Task $task): void
+    public function notifyAssigned(FieldWorker $worker, Task $task, string $instructions, ?string $customDeadline = null): void
     {
+        if ($worker->email) {
+            $worker->notify(new \App\Notifications\FieldWorkerAssignedNotification($task, $instructions, $customDeadline));
+        }
+
         $phone = $this->resolvePhone($worker);
 
         if (! $phone) {
-            Log::info('FieldWorkerNotificationService: skipped (no phone number)', [
+            Log::info('FieldWorkerNotificationService: skipped phone (no phone number)', [
                 'field_worker_id' => $worker->id,
                 'task_id'         => $task->id,
             ]);
             return;
         }
 
-        $this->sendSms($worker, $task, $phone);
-        $this->sendWhatsApp($worker, $task, $phone);
+        $this->sendSms($worker, $task, $phone, $instructions, $customDeadline);
+        $this->sendWhatsApp($worker, $task, $phone, $instructions, $customDeadline);
     }
 
     // ─── Private helpers ────────────────────────────────────────────────────
@@ -61,33 +65,26 @@ class FieldWorkerNotificationService
     /**
      * Build a detailed plain-text SMS body and send it.
      */
-    private function sendSms(FieldWorker $worker, Task $task, string $phone): void
+    private function sendSms(FieldWorker $worker, Task $task, string $phone, string $instructions, ?string $customDeadline = null): void
     {
-        $task->loadMissing('workOrder');
-
-        $deadline    = $task->deadline ? $task->deadline->format('d M Y') : 'Not set';
-        $jobCard     = $task->workOrder?->reference_number ?? 'N/A';
-        $priority    = ucfirst($task->priority ?? 'normal');
-        $description = $task->description
-            ? mb_substr(strip_tags($task->description), 0, 320) . (mb_strlen(strip_tags($task->description)) > 320 ? '...' : '')
-            : 'No additional details.';
+        $deadlineStr = $customDeadline 
+            ? \Carbon\Carbon::parse($customDeadline)->format('d M Y H:i') 
+            : ($task->deadline ? $task->deadline->format('d M Y') : 'Not set');
 
         $text = <<<SMS
             TASK ASSIGNMENT – Household Media
 
             Hello {$worker->name},
 
-            You have been assigned to a task. Please read carefully.
+            You have been assigned to a new task. Please read your specific instructions carefully.
 
-            Task   : {$task->title}
-            Job Card: {$jobCard}
-            Priority: {$priority}
-            Deadline: {$deadline}
+            Task: {$task->title}
+            Deadline: {$deadlineStr}
 
-            Details:
-            {$description}
+            Your Instructions:
+            {$instructions}
 
-            Report to your supervisor for further instructions.
+            Report to your supervisor upon completion or if you have any questions.
             SMS;
 
         // Dedent the heredoc (PHP 7.3+ heredoc strips leading whitespace)
@@ -111,26 +108,18 @@ class FieldWorkerNotificationService
      * Send the approved Infobip WhatsApp template message.
      * Silently skips if the template is not yet approved.
      */
-    private function sendWhatsApp(FieldWorker $worker, Task $task, string $phone): void
+    private function sendWhatsApp(FieldWorker $worker, Task $task, string $phone, string $instructions, ?string $customDeadline = null): void
     {
-        $task->loadMissing('workOrder');
-
-        $deadline    = $task->deadline ? $task->deadline->format('d M Y') : 'Not set';
-        $jobCard     = $task->workOrder?->reference_number ?? 'N/A';
-        $priority    = ucfirst($task->priority ?? 'normal');
-        $description = $task->description
-            ? mb_substr(strip_tags($task->description), 0, 200) . (mb_strlen(strip_tags($task->description)) > 200 ? '...' : '')
-            : 'No additional details.';
+        $deadlineStr = $customDeadline 
+            ? \Carbon\Carbon::parse($customDeadline)->format('d M Y H:i') 
+            : ($task->deadline ? $task->deadline->format('d M Y') : 'Not set');
 
         // Template placeholders — order matches the registered template body:
-        // {{1}} name  {{2}} task  {{3}} job card  {{4}} priority  {{5}} deadline  {{6}} details
+        // {{1}} name  {{2}} deadline  {{3}} details
         $placeholders = [
             $worker->name,
-            $task->title,
-            $jobCard,
-            $priority,
-            $deadline,
-            $description,
+            $deadlineStr,
+            $instructions,
         ];
 
         // Resolve media header details for the MEDIA_TEMPLATE

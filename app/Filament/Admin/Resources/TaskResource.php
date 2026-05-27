@@ -50,32 +50,12 @@ class TaskResource extends Resource
             ])->columns(2),
 
             Forms\Components\Section::make('Field Workers')
-                ->description('Assign non-user field workers to this task. They will receive an SMS and WhatsApp notification via Infobip.')
+                ->description('Use the "Field Workers" action button on the task table to assign and notify field workers.')
                 ->icon('heroicon-o-identification')
                 ->schema([
-                    Forms\Components\Repeater::make('fieldWorkerAssignments')
+                    Forms\Components\Placeholder::make('info')
                         ->label('')
-                        ->relationship('fieldWorkers')
-                        ->schema([
-                            Forms\Components\Select::make('id')
-                                ->label('Field Worker')
-                                ->options(FieldWorker::orderBy('name')->pluck('name', 'id'))
-                                ->searchable()
-                                ->required()
-                                ->columnSpan(2),
-                            Forms\Components\TextInput::make('notes')
-                                ->label('Assignment Notes')
-                                ->placeholder('e.g. Bring safety gear, report to site manager')
-                                ->maxLength(500)
-                                ->columnSpan(2),
-                        ])
-                        ->columns(4)
-                        ->addActionLabel('Add Field Worker')
-                        ->itemLabel(fn (array $state): ?string =>
-                            FieldWorker::find($state['id'] ?? null)?->name ?? 'New Assignment'
-                        )
-                        ->collapsible()
-                        ->columnSpanFull(),
+                        ->content('Field worker assignments are managed via the Actions menu on the task list or view page. This ensures that SMS and WhatsApp notifications are properly dispatched to the workers.'),
                 ])
                 ->collapsible()
                 ->collapsed(fn ($record) => $record === null),
@@ -165,56 +145,111 @@ class TaskResource extends Resource
                 ->label('Field Workers')
                 ->icon('heroicon-o-identification')
                 ->color('info')
-                ->modalHeading('Assign Field Workers')
-                ->modalDescription('Selected field workers will receive an SMS and WhatsApp notification via Infobip.')
+                ->modalHeading('Assign Field Workers & Instructions')
+                ->modalDescription('Assign field workers and specify exactly what they need to do. They will receive an email or WhatsApp notification.')
                 ->form(fn ($record) => [
-                    Forms\Components\CheckboxList::make('field_worker_ids')
-                        ->label('Field Workers')
-                        ->options(
-                            \App\Models\FieldWorker::orderBy('name')
-                                ->get()
-                                ->mapWithKeys(fn ($w) => [$w->id => $w->name . ' [Field Worker]'])
-                        )
-                        ->default(
-                            $record->fieldWorkers()->pluck('field_workers.id')->toArray()
-                        )
-                        ->searchable()
-                        ->columns(2)
-                        ->required()
-                        ->helperText('Checked workers are currently assigned. Tick to add, untick to remove.'),
+                    Forms\Components\Repeater::make('assignments')
+                        ->label('')
+                        ->schema([
+                            Forms\Components\Select::make('field_worker_id')
+                                ->label('Field Worker')
+                                ->options(\App\Models\FieldWorker::orderBy('name')->pluck('name', 'id'))
+                                ->required()
+                                ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                ->columnSpan(2),
+                            Forms\Components\DateTimePicker::make('deadline')
+                                ->label('Custom Deadline')
+                                ->nullable()
+                                ->columnSpan(2),
+                            Forms\Components\Textarea::make('notes')
+                                ->label('What must they do?')
+                                ->required()
+                                ->columnSpan(4),
+                        ])
+                        ->columns(4)
+                        ->default(function () use ($record) {
+                            return $record->fieldWorkers->map(function ($worker) {
+                                return [
+                                    'field_worker_id' => $worker->id,
+                                    'notes' => $worker->pivot->notes,
+                                    'deadline' => $worker->pivot->deadline,
+                                ];
+                            })->toArray();
+                        })
+                        ->addActionLabel('Add Worker Assignment'),
                 ])
                 ->action(function ($record, array $data) {
                     $before = $record->fieldWorkers()->pluck('field_workers.id');
-
-                    // Sync selected workers — only set assigned_at for newly added workers
+                    
                     $syncData = [];
-                    foreach ($data['field_worker_ids'] as $workerId) {
-                        if ($before->contains($workerId)) {
-                            // Already assigned — preserve the original assignment date
-                            $syncData[$workerId] = [];
-                        } else {
-                            // New assignment — stamp with current date
-                            $syncData[$workerId] = [
-                                'assigned_by' => auth()->id(),
-                                'assigned_at' => now(),
+                    $newAssignments = [];
+
+                    foreach ($data['assignments'] ?? [] as $assignment) {
+                        $workerId = $assignment['field_worker_id'];
+                        $notes = $assignment['notes'];
+                        $deadline = $assignment['deadline'] ?? null;
+
+                        $syncData[$workerId] = [
+                            'notes' => $notes,
+                            'deadline' => $deadline,
+                        ];
+
+                        if (! $before->contains($workerId)) {
+                            $syncData[$workerId]['assigned_by'] = auth()->id();
+                            $syncData[$workerId]['assigned_at'] = now();
+                            $newAssignments[] = [
+                                'id' => $workerId,
+                                'notes' => $notes,
+                                'deadline' => $deadline,
                             ];
                         }
                     }
+
                     $record->fieldWorkers()->sync($syncData);
 
                     // Notify only newly added workers
-                    $newlyAdded = collect($data['field_worker_ids'])->diff($before);
-                    foreach ($newlyAdded as $workerId) {
-                        \App\Jobs\SendFieldWorkerNotificationJob::dispatch($workerId, $record->id)
+                    foreach ($newAssignments as $newWorker) {
+                        \App\Jobs\SendFieldWorkerNotificationJob::dispatch($newWorker['id'], $record->id, $newWorker['notes'], $newWorker['deadline'])
                             ->onQueue('notifications');
                     }
 
-                    $count = count($data['field_worker_ids']);
+                    $count = count($syncData);
                     \Filament\Notifications\Notification::make()
                         ->title("Field workers updated ({$count} assigned).")
                         ->success()
                         ->send();
                 }),
+            Tables\Actions\Action::make('update_fw_status')
+                ->label('Update FW Status')
+                ->icon('heroicon-o-check-badge')
+                ->color('success')
+                ->form(fn ($record) => [
+                    Forms\Components\CheckboxList::make('completed_workers')
+                        ->label('Mark as Completed')
+                        ->options($record->fieldWorkers->pluck('name', 'id'))
+                        ->default($record->fieldWorkers->whereNotNull('pivot.completed_at')->pluck('id')->toArray())
+                        ->helperText('Check the field workers who have completed their instructions.')
+                ])
+                ->visible(fn ($record) => auth()->check() && auth()->user()->hasRole(['super_admin', 'workshop_manager']) && $record->fieldWorkers->isNotEmpty())
+                ->action(function ($record, array $data) {
+                    $completedIds = $data['completed_workers'] ?? [];
+                    
+                    foreach ($record->fieldWorkers as $worker) {
+                        $isCompleted = in_array($worker->id, $completedIds);
+                        
+                        if ($isCompleted && ! $worker->pivot->completed_at) {
+                            $record->fieldWorkers()->updateExistingPivot($worker->id, ['completed_at' => now()]);
+                        } elseif (! $isCompleted && $worker->pivot->completed_at) {
+                            $record->fieldWorkers()->updateExistingPivot($worker->id, ['completed_at' => null]);
+                        }
+                    }
+                    
+                    \Filament\Notifications\Notification::make()
+                        ->title("Field worker statuses updated.")
+                        ->success()
+                        ->send();
+                }),
+            Tables\Actions\EditAction::make()->label('Update'),
             SendMessageAction::make('send_message_task')
                 ->withRecordUrl(fn ($record) => url('/admin/tasks/' . $record->getKey())),
         ])
@@ -251,9 +286,18 @@ class TaskResource extends Resource
                                     default    => 'gray',
                                 }),
                             Infolists\Components\TextEntry::make('phone_number')->label('Phone')->placeholder('—')->copyable(),
-                            Infolists\Components\TextEntry::make('pivot.notes')->label('Notes')->placeholder('—'),
+                            Infolists\Components\IconEntry::make('pivot.completed_at')
+                                ->label('Status')
+                                ->icon(fn ($state) => $state ? 'heroicon-o-check-circle' : 'heroicon-o-clock')
+                                ->color(fn ($state) => $state ? 'success' : 'warning')
+                                ->tooltip(fn ($state) => $state ? 'Completed at ' . \Carbon\Carbon::parse($state)->format('d M Y H:i') : 'Pending'),
+                            Infolists\Components\TextEntry::make('pivot.deadline')
+                                ->label('Deadline')
+                                ->dateTime('d M Y H:i')
+                                ->placeholder('—'),
+                            Infolists\Components\TextEntry::make('pivot.notes')->label('Notes')->placeholder('—')->columnSpanFull(),
                         ])
-                        ->columns(4)
+                        ->columns(5)
                         ->columnSpanFull(),
                 ])
                 ->collapsible()

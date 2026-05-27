@@ -231,13 +231,15 @@ class InventoryService
             // Auto-Issue: find the originating inventory requisition (if any) and issue it
             $originatingReq = $procurementReq->originatingRequisition;
 
-            if ($originatingReq && $originatingReq->status === 'pending') {
-                // First approve it
-                $originatingReq->update([
-                    'status'      => 'approved',
-                    'approved_by' => $receivedBy->id,
-                    'approved_at' => now(),
-                ]);
+            if ($originatingReq && in_array($originatingReq->status, ['pending', 'approved'])) {
+                // If it's pending, first approve it
+                if ($originatingReq->status === 'pending') {
+                    $originatingReq->update([
+                        'status'      => 'approved',
+                        'approved_by' => $receivedBy->id,
+                        'approved_at' => now(),
+                    ]);
+                }
 
                 // Reload stock level to reflect the addition above
                 $stockLevel->refresh();

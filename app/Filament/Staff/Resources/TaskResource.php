@@ -27,8 +27,14 @@ class TaskResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         // Global queue: show tasks I've claimed + unclaimed tasks available for picking
-        return parent::getEloquentQuery()
-            ->where(fn (Builder $q) => $q
+        // Workshop Managers and Admins can see all tasks to assign them
+        $query = parent::getEloquentQuery();
+
+        if (auth()->check() && auth()->user()->hasRole(['super_admin', 'workshop_manager'])) {
+            return $query;
+        }
+
+        return $query->where(fn (Builder $q) => $q
                 ->where('claimed_by', auth()->id())
                 ->orWhereNull('claimed_by')
             );
@@ -100,6 +106,13 @@ class TaskResource extends Resource
             Tables\Columns\TextColumn::make('completion_percentage')->suffix('%')->sortable(),
             Tables\Columns\TextColumn::make('deadline')->date()->sortable()
                 ->color(fn ($record) => $record->deadline && $record->deadline->isPast() ? 'danger' : null),
+            Tables\Columns\TextColumn::make('fieldWorkers.name')
+                ->label('Field Workers')
+                ->badge()
+                ->color('warning')
+                ->formatStateUsing(fn ($state) => $state . ' [FW]')
+                ->separator(',')
+                ->placeholder('None'),
         ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -146,6 +159,115 @@ class TaskResource extends Resource
                     }),
                 Tables\Actions\EditAction::make()->label('Update')
                     ->visible(fn ($record) => ($record->work_order_id === null || $record->claimed_by === auth()->id()) && $record->status !== 'completed'),
+                Tables\Actions\Action::make('assign_field_workers')
+                    ->label('Field Workers')
+                    ->icon('heroicon-o-identification')
+                    ->color('info')
+                    ->modalHeading('Assign Field Workers & Instructions')
+                    ->modalDescription('Assign field workers and specify exactly what they need to do. They will receive an email or WhatsApp notification.')
+                    ->form(fn ($record) => [
+                        Forms\Components\Repeater::make('assignments')
+                            ->label('')
+                            ->schema([
+                            Forms\Components\Select::make('field_worker_id')
+                                ->label('Field Worker')
+                                ->options(\App\Models\FieldWorker::orderBy('name')->pluck('name', 'id'))
+                                ->required()
+                                ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                ->columnSpan(2),
+                            Forms\Components\DateTimePicker::make('deadline')
+                                ->label('Custom Deadline')
+                                ->nullable()
+                                ->columnSpan(2),
+                            Forms\Components\Textarea::make('notes')
+                                ->label('What must they do?')
+                                ->required()
+                                ->columnSpan(4),
+                        ])
+                        ->columns(4)
+                        ->default(function () use ($record) {
+                            return $record->fieldWorkers->map(function ($worker) {
+                                return [
+                                    'field_worker_id' => $worker->id,
+                                    'notes' => $worker->pivot->notes,
+                                    'deadline' => $worker->pivot->deadline,
+                                ];
+                            })->toArray();
+                        })
+                            ->addActionLabel('Add Worker Assignment'),
+                    ])
+                    ->visible(fn () => auth()->check() && auth()->user()->hasRole(['super_admin', 'workshop_manager']))
+                    ->action(function ($record, array $data) {
+                        $before = $record->fieldWorkers()->pluck('field_workers.id');
+                        
+                        $syncData = [];
+                        $newAssignments = [];
+
+                        foreach ($data['assignments'] ?? [] as $assignment) {
+                            $workerId = $assignment['field_worker_id'];
+                            $notes = $assignment['notes'];
+                            $deadline = $assignment['deadline'] ?? null;
+
+                            $syncData[$workerId] = [
+                                'notes' => $notes,
+                                'deadline' => $deadline,
+                            ];
+
+                            if (! $before->contains($workerId)) {
+                                $syncData[$workerId]['assigned_by'] = auth()->id();
+                                $syncData[$workerId]['assigned_at'] = now();
+                                $newAssignments[] = [
+                                    'id' => $workerId,
+                                    'notes' => $notes,
+                                    'deadline' => $deadline,
+                                ];
+                            }
+                        }
+
+                        $record->fieldWorkers()->sync($syncData);
+
+                        // Notify only newly added workers
+                        foreach ($newAssignments as $newWorker) {
+                            \App\Jobs\SendFieldWorkerNotificationJob::dispatch($newWorker['id'], $record->id, $newWorker['notes'], $newWorker['deadline'])
+                                ->onQueue('notifications');
+                        }
+
+                        $count = count($syncData);
+                        \Filament\Notifications\Notification::make()
+                            ->title("Field workers updated ({$count} assigned).")
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('update_fw_status')
+                    ->label('Update FW Status')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->form(fn ($record) => [
+                        Forms\Components\CheckboxList::make('completed_workers')
+                            ->label('Mark as Completed')
+                            ->options($record->fieldWorkers->pluck('name', 'id'))
+                            ->default($record->fieldWorkers->whereNotNull('pivot.completed_at')->pluck('id')->toArray())
+                            ->helperText('Check the field workers who have completed their instructions.')
+                    ])
+                    ->visible(fn ($record) => auth()->check() && auth()->user()->hasRole(['super_admin', 'workshop_manager']) && $record->fieldWorkers->isNotEmpty())
+                    ->action(function ($record, array $data) {
+                        $completedIds = $data['completed_workers'] ?? [];
+                        
+                        foreach ($record->fieldWorkers as $worker) {
+                            $isCompleted = in_array($worker->id, $completedIds);
+                            
+                            if ($isCompleted && ! $worker->pivot->completed_at) {
+                                $record->fieldWorkers()->updateExistingPivot($worker->id, ['completed_at' => now()]);
+                            } elseif (! $isCompleted && $worker->pivot->completed_at) {
+                                $record->fieldWorkers()->updateExistingPivot($worker->id, ['completed_at' => null]);
+                            }
+                        }
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title("Field worker statuses updated.")
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->defaultSort('deadline');
     }
