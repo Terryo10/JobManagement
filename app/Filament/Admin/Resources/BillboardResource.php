@@ -26,7 +26,13 @@ class BillboardResource extends Resource
             Forms\Components\TextInput::make('latitude')->numeric(),
             Forms\Components\TextInput::make('longitude')->numeric(),
             Forms\Components\TextInput::make('size')->maxLength(50),
-            Forms\Components\TextInput::make('type')->maxLength(100),
+            Forms\Components\Select::make('type')
+                ->options([
+                    'static' => 'Static Billboard',
+                    'bus' => 'Bus',
+                    'kombi' => 'Kombi',
+                ])
+                ->required(),
             Forms\Components\Select::make('status')->options(['available' => 'Available', 'occupied' => 'Occupied', 'maintenance' => 'Maintenance', 'inactive' => 'Inactive'])->default('available')->required(),
             Forms\Components\TextInput::make('monthly_rate')->numeric()->prefix('USD'),
             Forms\Components\DatePicker::make('next_maintenance_date'),
@@ -40,12 +46,41 @@ class BillboardResource extends Resource
             Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
             Tables\Columns\TextColumn::make('location_description')->limit(50),
             Tables\Columns\TextColumn::make('size'),
-            Tables\Columns\TextColumn::make('type'),
+            Tables\Columns\TextColumn::make('type')
+                ->badge()
+                ->color(fn ($state) => match ($state) {
+                    'static' => 'primary',
+                    'bus' => 'warning',
+                    'kombi' => 'success',
+                    default => 'gray',
+                })
+                ->formatStateUsing(fn ($state) => match ($state) {
+                    'static' => 'Static Billboard',
+                    'bus' => 'Bus',
+                    'kombi' => 'Kombi',
+                    default => $state,
+                })
+                ->searchable()
+                ->sortable(),
             Tables\Columns\TextColumn::make('status')->badge()->color(fn ($state) => match ($state) { 'available' => 'success', 'occupied' => 'info', 'maintenance' => 'warning', 'inactive' => 'gray', default => 'gray' }),
             Tables\Columns\TextColumn::make('monthly_rate')->money('USD')->sortable(),
             Tables\Columns\TextColumn::make('next_maintenance_date')->date()->sortable(),
         ])
-        ->filters([Tables\Filters\SelectFilter::make('status')->options(['available' => 'Available', 'occupied' => 'Occupied', 'maintenance' => 'Maintenance', 'inactive' => 'Inactive'])])
+        ->filters([
+            Tables\Filters\SelectFilter::make('type')
+                ->options([
+                    'static' => 'Static Billboard',
+                    'bus' => 'Bus',
+                    'kombi' => 'Kombi',
+                ]),
+            Tables\Filters\SelectFilter::make('status')
+                ->options([
+                    'available' => 'Available',
+                    'occupied' => 'Occupied',
+                    'maintenance' => 'Maintenance',
+                    'inactive' => 'Inactive',
+                ]),
+        ])
         ->actions([Tables\Actions\EditAction::make()])
         ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
