@@ -4,6 +4,7 @@ namespace App\Filament\Accountant\Resources;
 
 use App\Filament\Accountant\Resources\PurchaseOrderResource\Pages;
 use App\Filament\Forms\Components\SignaturePad;
+use App\Models\GlAccount;
 use App\Models\PurchaseOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
@@ -38,14 +39,45 @@ class PurchaseOrderResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('gl_account')
-                    ->label('GL Account Code')
-                    ->placeholder('e.g. 5010')
-                    ->maxLength(50),
-                Forms\Components\TextInput::make('gl_account_name')
-                    ->label('GL Account Name')
-                    ->placeholder('e.g. Marketing Expenses')
-                    ->maxLength(150),
+                Forms\Components\Select::make('gl_account_id')
+                    ->label('GL Account')
+                    ->placeholder('Search or select a GL account…')
+                    ->options(
+                        GlAccount::active()->orderBy('code')
+                            ->pluck('name', 'id')
+                            ->mapWithKeys(fn ($name, $id) => [
+                                $id => GlAccount::find($id)?->code . ' — ' . $name,
+                            ])
+                    )
+                    ->searchable()
+                    ->getSearchResultsUsing(fn (string $search) =>
+                        GlAccount::active()
+                            ->where(fn ($q) => $q
+                                ->where('code', 'like', "%{$search}%")
+                                ->orWhere('name', 'like', "%{$search}%")
+                            )
+                            ->orderBy('code')
+                            ->limit(50)
+                            ->get()
+                            ->mapWithKeys(fn ($gl) => [$gl->id => "{$gl->code} — {$gl->name}"])
+                            ->toArray()
+                    )
+                    ->getOptionLabelUsing(fn ($value) =>
+                        ($gl = GlAccount::find($value)) ? "{$gl->code} — {$gl->name}" : $value
+                    )
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        if ($gl = GlAccount::find($state)) {
+                            $set('gl_account', $gl->code);
+                            $set('gl_account_name', $gl->name);
+                        } else {
+                            $set('gl_account', null);
+                            $set('gl_account_name', null);
+                        }
+                    })
+                    ->live()
+                    ->columnSpanFull(),
+                Forms\Components\Hidden::make('gl_account'),
+                Forms\Components\Hidden::make('gl_account_name'),
                 Forms\Components\TextInput::make('total_amount')
                     ->label('Amount Requested')
                     ->numeric()
@@ -152,6 +184,18 @@ class PurchaseOrderResource extends Resource
                     ->modalHeading('Finance Approval')
                     ->modalDescription('Please draw your signature to confirm finance approval. This will be recorded on the requisition PDF.')
                     ->form([
+                        Forms\Components\Select::make('gl_account_id')
+                            ->label('GL Account')
+                            ->placeholder('Assign a GL account…')
+                            ->options(
+                                GlAccount::active()->orderBy('code')
+                                    ->get()
+                                    ->mapWithKeys(fn ($gl) => [$gl->id => "{$gl->code} — {$gl->name}"])
+                                    ->toArray()
+                            )
+                            ->searchable()
+                            ->required()
+                            ->helperText('Select the GL account for this requisition before approving.'),
                         SignaturePad::make('finance_signature')
                             ->label('Your Signature')
                             ->default(fn () => auth()->user()->saved_signature)
@@ -166,11 +210,15 @@ class PurchaseOrderResource extends Resource
                             auth()->user()->update(['saved_signature' => $data['finance_signature']]);
                         }
 
+                        $gl = GlAccount::find($data['gl_account_id']);
+
                         $record->update([
                             'status'                 => 'finance_approved',
                             'finance_approved_by'    => auth()->id(),
                             'finance_signature'      => $data['finance_signature'] ?? null,
                             'finance_signature_date' => now(),
+                            'gl_account'             => $gl?->code,
+                            'gl_account_name'        => $gl?->name,
                         ]);
                         Notification::make()
                             ->title('Finance approved — sent to Admin for final sign-off.')
@@ -227,11 +275,21 @@ class PurchaseOrderResource extends Resource
                 Infolists\Components\TextEntry::make('title')->label('Purpose')->columnSpanFull(),
                 Infolists\Components\TextEntry::make('attachments')
                     ->label('Attachments')
-                    ->listWithLineBreaks()
-                    ->formatStateUsing(fn ($state) => $state ? 'View / Download (' . basename($state) . ')' : '—')
-                    ->url(fn ($state) => $state ? Storage::url($state) : null)
-                    ->openUrlInNewTab()
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->placeholder('—')
+                    ->formatStateUsing(function ($state) {
+                        if (empty($state)) {
+                            return '—';
+                        }
+                        $items = is_array($state) ? $state : [$state];
+                        return implode('<br>', array_map(
+                            fn ($path) => '<a href="' . Storage::url($path) . '" target="_blank" rel="noopener noreferrer">'
+                                . e(basename($path))
+                                . '</a>',
+                            $items
+                        ));
+                    })
+                    ->html(),
                 Infolists\Components\TextEntry::make('notes')->label('Notes')->columnSpanFull()->placeholder('—'),
             ])->columns(3),
         ]);
