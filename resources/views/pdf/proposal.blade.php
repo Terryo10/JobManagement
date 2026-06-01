@@ -77,8 +77,9 @@
                 <div class="detail-line"><span class="detail-label">VALID UNTIL :</span> {{ $proposal->valid_until ? $proposal->valid_until->format('d/m/Y') : 'N/A' }}</div>
                 <div class="detail-line"><span class="detail-label">PREPARED BY :</span> {{ $proposal->preparedBy?->name ?? 'Household Brands Team' }}</div>
                 <br>
-                <div class="detail-line"><span class="detail-label">ADDRESS:</span> Office 6, 146 Samora Machel Ave, Harare</div>
-                <div class="detail-line"><span class="detail-label">EMAIL:</span> lovett@householdmedia.co.zw</div>
+                <div class="detail-line"><span class="detail-label">VENDOR NO. :</span> 721327</div>
+                <div class="detail-line"><span class="detail-label">ADDRESS:</span> 8 Donald Macdonald Drive, Eastlea</div>
+                <div class="detail-line"><span class="detail-label">EMAIL:</span> {{ $proposal->preparedBy?->email ?? 'info@householdmedia.co.zw' }}</div>
                 <div class="detail-line"><span class="detail-label">PHONE:</span> 0774105443</div>
             </div>
         </div>
@@ -126,6 +127,19 @@
     <div class="notes-section">
         <div class="notes-title">Additional Notes:</div>
         {!! nl2br(e($proposal->notes)) !!}
+    </div>
+    @endif
+
+    {{-- ── Bank Details ── --}}
+    @if($proposal->bankAccount)
+    <div style="margin-top: 15px; padding: 10px 15px; border: 1px solid #999; font-size: 10px;">
+        <div style="font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">Bank Details</div>
+        <div style="margin-bottom: 2px;"><strong>Acc Name:</strong> {{ $proposal->bankAccount->account_name }}</div>
+        <div style="margin-bottom: 2px;"><strong>Bank:</strong> {{ $proposal->bankAccount->bank_name }}</div>
+        @if($proposal->bankAccount->branch)
+        <div style="margin-bottom: 2px;"><strong>Branch:</strong> {{ $proposal->bankAccount->branch }}</div>
+        @endif
+        <div style="margin-bottom: 2px;"><strong>Acc No:</strong> {{ $proposal->bankAccount->account_number }}</div>
     </div>
     @endif
 

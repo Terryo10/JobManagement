@@ -88,15 +88,16 @@
             <div class="header-right">
                 <div class="doc-type">Invoice</div>
                 <div class="detail-line"><span class="detail-label">DATE :</span> {{ $invoice->issued_at ? $invoice->issued_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
-                <div class="detail-line"><span class="detail-label">SALES PERSON :</span> {{ $invoice->createdBy?->name ?? '' }}</div>
+                {{-- <div class="detail-line"><span class="detail-label">SALES PERSON :</span> {{ $invoice->createdBy?->name ?? '' }}</div> --}}
                 <div class="detail-line"><span class="detail-label">Invoice No:</span> {{ $invoice->invoice_number }}</div>
                 @if($invoice->workOrder)
                 <div class="detail-line"><span class="detail-label">Reference Number:</span> {{ $invoice->workOrder->reference_number }}</div>
                 @endif
                 <div class="detail-line"><span class="detail-label">OUR VAT NO. :</span> 220284500</div>
                 <div class="detail-line"><span class="detail-label">OUR TIN NO. :</span> 2000885268</div>
-                <div class="detail-line"><span class="detail-label">ADDRESS:</span> Office 6, 146 Samora Machel Ave, Harare</div>
-                <div class="detail-line"><span class="detail-label">EMAIL ADRESS:</span> lovett@householdmedia.co.zw</div>
+                <div class="detail-line"><span class="detail-label">VENDOR NO. :</span> 721327</div>
+                <div class="detail-line"><span class="detail-label">ADDRESS:</span> 8 Donald Macdonald Drive, Eastlea</div>
+                <div class="detail-line"><span class="detail-label">EMAIL ADDRESS:</span> {{ $invoice->createdBy?->email ?? 'info@householdmedia.co.zw' }}</div>
                 <div class="detail-line"><span class="detail-label">CONTACT NUMBER:</span> 0774105443</div>
             </div>
         </div>
@@ -108,10 +109,7 @@
             <div class="customer-label">Customer Registered Name :</div>
             <div class="customer-value">{{ $invoice->client?->company_name ?? '—' }}</div>
         </div>
-        <div class="customer-row">
-            <div class="customer-label">Trade Name :</div>
-            <div class="customer-value">{{ $invoice->client?->contact_person ?? '' }}</div>
-        </div>
+
         <div class="customer-row">
             <div class="customer-label">Customer Address :</div>
             <div class="customer-value">{{ $invoice->client?->address ?? '' }}{{ $invoice->client?->city ? ', ' . $invoice->client->city : '' }}</div>
@@ -167,10 +165,10 @@
     <div class="footer-section">
         <div class="bank-details">
             <div class="bank-details-title">Bank Details</div>
-            <div class="bank-line"><strong>Acc Name:</strong> Household Brands (Pvt) Ltd</div>
-            <div class="bank-line"><strong>Bank:</strong> NMB Bank</div>
-            <div class="bank-line"><strong>Branch:</strong> Eastgate</div>
-            <div class="bank-line"><strong>Acc No:</strong> 100040041620</div>
+            <div class="bank-line"><strong>Acc Name:</strong> {{ $invoice->bankAccount?->account_name ?? 'Household Brands (Pvt) Ltd' }}</div>
+            <div class="bank-line"><strong>Bank:</strong> {{ $invoice->bankAccount?->bank_name ?? 'NMB Bank' }}</div>
+            <div class="bank-line"><strong>Branch:</strong> {{ $invoice->bankAccount?->branch ?? 'Eastgate' }}</div>
+            <div class="bank-line"><strong>Acc No:</strong> {{ $invoice->bankAccount?->account_number ?? '100040041620' }}</div>
         </div>
         <div class="totals-cell">
             <div class="total-row">

@@ -8,6 +8,7 @@ use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 use App\Models\Invoice;
 use App\Models\Quotation;
 use App\Models\RateCard;
+use App\Models\BankAccount;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -66,6 +67,14 @@ class QuotationResource extends Resource
                             ->default('draft')
                             ->required(),
                         Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
+                        Forms\Components\Select::make('bank_account_id')
+                            ->label('Bank Account')
+                            ->relationship('bankAccount', 'account_name')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->bank_name} — {$record->account_number}")
+                            ->searchable()
+                            ->preload()
+                            ->default(fn () => BankAccount::where('is_default', true)->where('is_active', true)->value('id'))
+                            ->helperText('Select bank account for PDF bank details'),
                         Forms\Components\DatePicker::make('valid_until')->label('Valid Until'),
                         Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
                     ])->columns(2),
@@ -201,7 +210,7 @@ class QuotationResource extends Resource
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('gray')
                 ->action(function ($record) {
-                    $record->load('items', 'client', 'workOrder', 'createdBy');
+                    $record->load('items', 'client', 'workOrder', 'createdBy', 'bankAccount');
                     $pdf = Pdf::loadView('pdf.quotation', ['quotation' => $record]);
                     return response()->streamDownload(
                         fn () => print($pdf->output()),
@@ -230,6 +239,7 @@ class QuotationResource extends Resource
                         'total'          => $record->total,
                         'notes'          => $record->notes,
                         'created_by'     => auth()->id(),
+                        'bank_account_id' => $record->bank_account_id,
                     ]);
                     foreach ($record->items as $item) {
                         $invoice->items()->create([

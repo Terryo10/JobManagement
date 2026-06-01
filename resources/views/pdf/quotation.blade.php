@@ -96,8 +96,9 @@
                 @endif
                 <div class="detail-line"><span class="detail-label">OUR VAT NO. :</span> 220284500</div>
                 <div class="detail-line"><span class="detail-label">OUR TIN NO. :</span> 2000885268</div>
-                <div class="detail-line"><span class="detail-label">ADDRESS:</span> Office 6, 146 Samora Machel Ave, Harare</div>
-                <div class="detail-line"><span class="detail-label">EMAIL ADRESS:</span> lovett@householdmedia.co.zw</div>
+                <div class="detail-line"><span class="detail-label">VENDOR NO. :</span> 721327</div>
+                <div class="detail-line"><span class="detail-label">ADDRESS:</span> 8 Donald Macdonald Drive, Eastlea</div>
+                <div class="detail-line"><span class="detail-label">EMAIL ADDRESS:</span> {{ $quotation->createdBy?->email ?? 'info@householdmedia.co.zw' }}</div>
                 <div class="detail-line"><span class="detail-label">CONTACT NUMBER:</span> 0774105443</div>
             </div>
         </div>
@@ -109,10 +110,7 @@
             <div class="customer-label">Customer Registered Name :</div>
             <div class="customer-value">{{ $quotation->client?->company_name ?? '—' }}</div>
         </div>
-        <div class="customer-row">
-            <div class="customer-label">Trade Name :</div>
-            <div class="customer-value">{{ $quotation->client?->contact_person ?? '' }}</div>
-        </div>
+
         <div class="customer-row">
             <div class="customer-label">Customer Address :</div>
             <div class="customer-value">{{ $quotation->client?->address ?? '' }}{{ $quotation->client?->city ? ', ' . $quotation->client->city : '' }}</div>
@@ -168,10 +166,10 @@
     <div class="footer-section">
         <div class="bank-details">
             <div class="bank-details-title">Bank Details</div>
-            <div class="bank-line"><strong>Acc Name:</strong> Household Brands (Pvt) Ltd</div>
-            <div class="bank-line"><strong>Bank:</strong> NMB Bank</div>
-            <div class="bank-line"><strong>Branch:</strong> Eastgate</div>
-            <div class="bank-line"><strong>Acc No:</strong> 100040041620</div>
+            <div class="bank-line"><strong>Acc Name:</strong> {{ $quotation->bankAccount?->account_name ?? 'Household Brands (Pvt) Ltd' }}</div>
+            <div class="bank-line"><strong>Bank:</strong> {{ $quotation->bankAccount?->bank_name ?? 'NMB Bank' }}</div>
+            <div class="bank-line"><strong>Branch:</strong> {{ $quotation->bankAccount?->branch ?? 'Eastgate' }}</div>
+            <div class="bank-line"><strong>Acc No:</strong> {{ $quotation->bankAccount?->account_number ?? '100040041620' }}</div>
         </div>
         <div class="totals-cell">
             <div class="total-row">

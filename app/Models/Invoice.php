@@ -19,6 +19,7 @@ class Invoice extends Model
         'issued_at', 'due_at', 'paid_at', 'payment_method',
         'payment_reference', 'notes', 'created_by',
         'client_signature', 'client_signature_date', 'client_ip',
+        'bank_account_id',
     ];
 
     protected function casts(): array
@@ -58,5 +59,10 @@ class Invoice extends Model
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 }

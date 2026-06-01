@@ -14,7 +14,7 @@ class Quotation extends Model
     protected $fillable = [
         'quotation_number', 'client_id', 'work_order_id', 'created_by',
         'status', 'currency', 'subtotal', 'tax_rate', 'tax_amount', 'total',
-        'valid_until', 'notes',
+        'valid_until', 'notes', 'bank_account_id',
     ];
 
     protected function casts(): array
@@ -51,5 +51,10 @@ class Quotation extends Model
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 }
