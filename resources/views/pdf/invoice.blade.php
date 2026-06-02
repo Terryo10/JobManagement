@@ -88,7 +88,7 @@
             <div class="header-right">
                 <div class="doc-type">Invoice</div>
                 <div class="detail-line"><span class="detail-label">DATE :</span> {{ $invoice->issued_at ? $invoice->issued_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
-                {{-- <div class="detail-line"><span class="detail-label">SALES PERSON :</span> {{ $invoice->createdBy?->name ?? '' }}</div> --}}
+
                 <div class="detail-line"><span class="detail-label">Invoice No:</span> {{ $invoice->invoice_number }}</div>
                 @if($invoice->workOrder)
                 <div class="detail-line"><span class="detail-label">Reference Number:</span> {{ $invoice->workOrder->reference_number }}</div>
@@ -125,20 +125,18 @@
     </div>
 
     {{-- ── Items Table ── --}}
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th style="width:6%">QTY</th>
-                <th style="width:34%">DESCRIPTION</th>
-                <th style="width:15%" class="text-right">UNIT PRICE</th>
-                <th style="width:15%" class="text-right">VAT AMT</th>
-                <th style="width:15%" class="text-right">TOTAL (EXCL)</th>
-                <th style="width:15%" class="text-right">TOTAL (INCL)</th>
-            </tr>
-        </thead>
-    </table>
     <div class="items-wrapper">
-        <table class="items-table" style="border: none;">
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width:6%">QTY</th>
+                    <th style="width:34%">DESCRIPTION</th>
+                    <th style="width:15%" class="text-right">UNIT PRICE ({{ $invoice->currency }})</th>
+                    <th style="width:15%" class="text-right">VAT AMT ({{ $invoice->currency }})</th>
+                    <th style="width:15%" class="text-right">TOTAL EXCL ({{ $invoice->currency }})</th>
+                    <th style="width:15%" class="text-right">TOTAL INCL ({{ $invoice->currency }})</th>
+                </tr>
+            </thead>
             <tbody>
                 @forelse($invoice->items as $item)
                 @php
@@ -176,7 +174,7 @@
                 <div class="total-value">{{ number_format($invoice->subtotal, 2) }}</div>
             </div>
             <div class="total-row">
-                <div class="total-label">VAT TOTAL</div>
+                <div class="total-label">VAT TOTAL {{ $invoice->currency }}</div>
                 <div class="total-value">{{ number_format($invoice->tax_amount, 2) }}</div>
             </div>
             <div class="total-row grand">

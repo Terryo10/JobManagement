@@ -14,7 +14,7 @@ class PurchaseOrder extends Model
     use LogsActivity;
     protected $fillable = [
         'title', 'reference_number', 'status', 'ordered_by',
-        'approved_by', 'finance_approved_by', 'total_amount',
+        'approved_by', 'finance_approved_by', 'total_amount', 'currency',
         'expected_delivery', 'delivered_at', 'notes',
         'work_order_id', 'attachments',
         'finance_signature', 'finance_signature_date',

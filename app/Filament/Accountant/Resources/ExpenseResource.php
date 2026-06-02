@@ -62,7 +62,7 @@ class ExpenseResource extends Resource
                     ->required()
                     ->default(today()),
                 Forms\Components\Select::make('currency')
-                    ->options(['USD' => 'USD', 'ZWL' => 'ZWL'])
+                    ->options(['USD' => 'USD', 'ZWG' => 'ZWG'])
                     ->default('USD'),
                 Forms\Components\Textarea::make('description')
                     ->rows(3)

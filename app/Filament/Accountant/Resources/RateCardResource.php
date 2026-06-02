@@ -34,7 +34,10 @@ class RateCardResource extends Resource
                 Forms\Components\TextInput::make('unit')->required()->maxLength(50)
                     ->helperText('e.g., sqm, hour, unit, metre'),
                 Forms\Components\TextInput::make('rate')->numeric()->required()->prefix('$'),
-                Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
+                Forms\Components\Select::make('currency')
+                    ->options(['USD' => 'USD (US Dollar)', 'ZWG' => 'ZWG (Zimbabwe Gold)'])
+                    ->default('USD')
+                    ->required(),
                 Forms\Components\Toggle::make('is_active')->default(true),
                 Forms\Components\DatePicker::make('effective_from'),
                 Forms\Components\DatePicker::make('effective_to'),
