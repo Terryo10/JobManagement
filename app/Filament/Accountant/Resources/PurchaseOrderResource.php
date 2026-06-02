@@ -81,9 +81,14 @@ class PurchaseOrderResource extends Resource
                 Forms\Components\TextInput::make('total_amount')
                     ->label('Amount Requested')
                     ->numeric()
-                    ->prefix('$')
+                    ->prefix(fn (Forms\Get $get) => $get('currency') ?? 'USD')
+                    ->live()
                     ->required()
                     ->default(0),
+                Forms\Components\Select::make('currency')
+                    ->options(['USD' => 'USD', 'ZWG' => 'ZWG'])
+                    ->default('USD')
+                    ->required(),
                 Forms\Components\TextInput::make('reference_number')
                     ->required()
                     ->maxLength(50)
@@ -140,7 +145,7 @@ class PurchaseOrderResource extends Resource
                     ->label('Requested By'),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Amount')
-                    ->money('USD')
+                    ->formatStateUsing(fn ($state, $record) => ($record->currency ?? 'USD') . ' ' . number_format($state, 2))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -265,7 +270,9 @@ class PurchaseOrderResource extends Resource
             Infolists\Components\Section::make()->schema([
                 Infolists\Components\TextEntry::make('reference_number')->label('Reference'),
                 Infolists\Components\TextEntry::make('orderedBy.name')->label('Requested By'),
-                Infolists\Components\TextEntry::make('total_amount')->label('Amount')->money('USD'),
+                Infolists\Components\TextEntry::make('total_amount')
+                    ->label('Amount')
+                    ->formatStateUsing(fn ($state, $record) => ($record->currency ?? 'USD') . ' ' . number_format($state, 2)),
                 Infolists\Components\TextEntry::make('status')->badge(),
                 Infolists\Components\TextEntry::make('workOrder.reference_number')->label('Work Order')->placeholder('—'),
                 Infolists\Components\TextEntry::make('gl_account')

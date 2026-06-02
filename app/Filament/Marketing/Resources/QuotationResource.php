@@ -66,7 +66,10 @@ class QuotationResource extends Resource
                             ])
                             ->default('draft')
                             ->required(),
-                        Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
+                        Forms\Components\Select::make('currency')
+                            ->options(['USD' => 'USD', 'ZWG' => 'ZWG'])
+                            ->default('USD')
+                            ->required(),
                         Forms\Components\Select::make('bank_account_id')
                             ->label('Bank Account')
                             ->relationship('bankAccount', 'account_name')

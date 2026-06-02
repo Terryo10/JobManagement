@@ -99,7 +99,7 @@
     </div>
     <div class="form-row">
         <div class="form-label">Amount</div>
-        <div class="form-value">${{ number_format($purchaseOrder->total_amount, 2) }}</div>
+        <div class="form-value">{{ $purchaseOrder->currency }} {{ number_format($purchaseOrder->total_amount, 2) }}</div>
     </div>
     <div class="form-row">
         <div class="form-label">Date</div>
@@ -107,7 +107,7 @@
     </div>
     <div class="form-row">
         <div class="form-label">Payment Type</div>
-        <div class="form-value">PETTY CASH USD / BANK TRANSFER</div>
+        <div class="form-value">PETTY CASH {{ $purchaseOrder->currency }} / BANK TRANSFER</div>
     </div>
     <div class="form-row">
         <div class="form-label">Reference No.</div>
@@ -134,8 +134,8 @@
     @endif
     <div class="totals">
         <div class="total-row grand">
-            <div class="total-label">AMOUNT REQUESTED</div>
-            <div class="total-value">${{ number_format($purchaseOrder->total_amount, 2) }}</div>
+            <div class="total-label">AMOUNT REQUESTED {{ $purchaseOrder->currency }}</div>
+            <div class="total-value">{{ number_format($purchaseOrder->total_amount, 2) }}</div>
         </div>
     </div>
 
