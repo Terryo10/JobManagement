@@ -16,6 +16,7 @@ class Proposal extends Model
         'title', 'client_id', 'lead_id', 'prepared_by',
         'type', 'status', 'value', 'currency',
         'submitted_at', 'valid_until', 'content', 'notes',
+        'bank_account_id',
     ];
 
     protected function casts(): array
@@ -45,5 +46,10 @@ class Proposal extends Model
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 }

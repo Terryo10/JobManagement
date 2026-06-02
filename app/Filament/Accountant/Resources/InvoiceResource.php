@@ -4,6 +4,7 @@ namespace App\Filament\Accountant\Resources;
 
 use App\Filament\Accountant\Resources\InvoiceResource\Pages;
 use App\Models\Invoice;
+use App\Models\BankAccount;
 use App\Services\AiReportService;
 use App\Services\InvoiceMailService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -64,6 +65,14 @@ class InvoiceResource extends Resource
                         ])
                         ->default('draft')->required(),
                     Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
+                    Forms\Components\Select::make('bank_account_id')
+                        ->label('Bank Account')
+                        ->relationship('bankAccount', 'account_name')
+                        ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->bank_name} — {$record->account_number}")
+                        ->searchable()
+                        ->preload()
+                        ->default(fn () => BankAccount::where('is_default', true)->where('is_active', true)->value('id'))
+                        ->helperText('Select bank account for PDF bank details'),
                     Forms\Components\Textarea::make('notes')->rows(3)->columnSpanFull(),
                 ])->columns(2),
                 Forms\Components\Tabs\Tab::make('Line Items')->icon('heroicon-o-list-bullet')->schema([
@@ -228,7 +237,7 @@ class InvoiceResource extends Resource
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('gray')
                 ->action(function ($record) {
-                    $record->load('items', 'client', 'workOrder', 'createdBy');
+                    $record->load('items', 'client', 'workOrder', 'createdBy', 'bankAccount');
                     $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $record]);
                     return response()->streamDownload(
                         fn () => print($pdf->output()),

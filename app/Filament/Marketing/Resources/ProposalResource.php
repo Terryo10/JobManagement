@@ -4,6 +4,7 @@ namespace App\Filament\Marketing\Resources;
 
 use App\Filament\Marketing\Resources\ProposalResource\Pages;
 use App\Models\Proposal;
+use App\Models\BankAccount;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -37,6 +38,14 @@ class ProposalResource extends Resource
                 Forms\Components\TextInput::make('currency')->default('USD')->maxLength(10),
                 Forms\Components\DatePicker::make('submitted_at'),
                 Forms\Components\DatePicker::make('valid_until'),
+                Forms\Components\Select::make('bank_account_id')
+                    ->label('Bank Account')
+                    ->relationship('bankAccount', 'account_name')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->bank_name} — {$record->account_number}")
+                    ->searchable()
+                    ->preload()
+                    ->default(fn () => BankAccount::where('is_default', true)->where('is_active', true)->value('id'))
+                    ->helperText('Select bank account for PDF bank details'),
                 Forms\Components\RichEditor::make('content')->columnSpanFull(),
                 Forms\Components\Textarea::make('notes')->rows(2)->columnSpanFull(),
             ])->columns(2),
@@ -73,7 +82,7 @@ class ProposalResource extends Resource
                 ->iconButton()
                 ->tooltip('Download Proposal PDF')
                 ->action(function ($record) {
-                    $record->load('client', 'lead', 'preparedBy');
+                    $record->load('client', 'lead', 'preparedBy', 'bankAccount');
                     $pdf = Pdf::loadView('pdf.proposal', ['proposal' => $record]);
                     return response()->streamDownload(
                         fn () => print($pdf->output()),
