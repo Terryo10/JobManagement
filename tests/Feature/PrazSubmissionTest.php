@@ -29,6 +29,7 @@ class PrazSubmissionTest extends TestCase
             ->test(CreatePrazSubmission::class)
             ->fillForm([
                 'title' => 'Billboard Tender – Harare CBD',
+                'description' => 'Billboard Tender – Harare CBD description',
                 'tender_number' => 'PRAZ/2026/GOV/001',
                 'category' => 'services',
                 'procuring_entity' => 'Ministry of Information',

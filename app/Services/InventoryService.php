@@ -6,6 +6,7 @@ use App\Models\InventoryRequisition;
 use App\Models\Material;
 use App\Models\StockLevel;
 use App\Models\User;
+use App\Notifications\NotificationEvent;
 use Illuminate\Support\Facades\DB;
 
 class InventoryService
@@ -70,6 +71,24 @@ class InventoryService
                 'approved_at' => now(),
             ]);
         });
+
+        // Notify the requester that their inventory requisition was approved
+        if ($req->requested_by) {
+            $materialName = $req->material?->name ?? 'item';
+
+            app(NotificationRouter::class)->dispatch(new NotificationEvent(
+                type:             'inventory_requisition.approved',
+                title:            'Your Inventory Requisition Was Approved',
+                body:             "Your request for {$req->quantity_requested} {$req->material?->unit} of \"{$materialName}\" ({$req->reference_number}) has been approved by {$approver->name}. Items will be issued shortly.",
+                icon:             'heroicon-o-check-circle',
+                color:            'success',
+                recipientUserIds: [$req->requested_by],
+                subjectType:      InventoryRequisition::class,
+                subjectId:        $req->id,
+                priority:         'high',
+                idempotencyKey:   "inv_req.approved.{$req->id}",
+            ));
+        }
     }
 
     /**
@@ -102,6 +121,24 @@ class InventoryService
                 'issued_at'        => now(),
             ]);
         });
+
+        // Notify the requester that their items have been issued
+        if ($req->requested_by) {
+            $materialName = $req->material?->name ?? 'item';
+
+            app(NotificationRouter::class)->dispatch(new NotificationEvent(
+                type:             'inventory_requisition.issued',
+                title:            'Your Requested Items Have Been Issued',
+                body:             "{$req->quantity_requested} {$req->material?->unit} of \"{$materialName}\" ({$req->reference_number}) has been issued. Please collect from stores.",
+                icon:             'heroicon-o-inbox-arrow-down',
+                color:            'success',
+                recipientUserIds: [$req->requested_by],
+                subjectType:      InventoryRequisition::class,
+                subjectId:        $req->id,
+                priority:         'high',
+                idempotencyKey:   "inv_req.issued.{$req->id}",
+            ));
+        }
     }
 
     /**
@@ -123,6 +160,28 @@ class InventoryService
                 'rejection_reason' => $reason,
             ]);
         });
+
+        // Notify the requester that their requisition was rejected
+        if ($req->requested_by) {
+            $materialName = $req->material?->name ?? 'item';
+            $body = "Your request for \"{$materialName}\" ({$req->reference_number}) has been rejected.";
+            if ($reason) {
+                $body .= " Reason: \"{$reason}\"";
+            }
+
+            app(NotificationRouter::class)->dispatch(new NotificationEvent(
+                type:             'inventory_requisition.rejected',
+                title:            'Your Inventory Requisition Was Rejected',
+                body:             $body,
+                icon:             'heroicon-o-x-circle',
+                color:            'danger',
+                recipientUserIds: [$req->requested_by],
+                subjectType:      InventoryRequisition::class,
+                subjectId:        $req->id,
+                priority:         'high',
+                idempotencyKey:   "inv_req.rejected.{$req->id}",
+            ));
+        }
     }
 
     // ─────────────────────────────────────────────

@@ -302,4 +302,40 @@ return [
         'channel_whatsapp'  => true,
     ],
 
+    // -------------------------------------------------------------------------
+    // Inventory Requisitions
+    // -------------------------------------------------------------------------
+    'inventory_requisition.approved' => [
+        'label'             => 'Inventory Requisition Approved',
+        'channel_database'  => true,
+        'channel_mail'      => true,
+        'channel_sms'       => false,
+        'channel_whatsapp'  => true,
+    ],
+    'inventory_requisition.issued' => [
+        'label'             => 'Inventory Items Issued',
+        'channel_database'  => true,
+        'channel_mail'      => true,
+        'channel_sms'       => false,
+        'channel_whatsapp'  => true,
+    ],
+    'inventory_requisition.rejected' => [
+        'label'             => 'Inventory Requisition Rejected',
+        'channel_database'  => true,
+        'channel_mail'      => true,
+        'channel_sms'       => false,
+        'channel_whatsapp'  => true,
+    ],
+
+    // -------------------------------------------------------------------------
+    // Missing event types (dispatched but previously unconfigured)
+    // -------------------------------------------------------------------------
+    'task.unassigned' => [
+        'label'             => 'Task Unassigned',
+        'channel_database'  => true,
+        'channel_mail'      => true,
+        'channel_sms'       => false,
+        'channel_whatsapp'  => true,
+    ],
+
 ];
