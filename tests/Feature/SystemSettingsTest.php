@@ -42,6 +42,9 @@ class SystemSettingsTest extends TestCase
     {
         SystemSetting::setValue('sms_enabled', '1');
         
+        // Trigger the method to populate the cache
+        SystemSetting::smsEnabled();
+
         // Cache should now hold the value
         $this->assertTrue(Cache::has('system_setting.sms_enabled'));
         $this->assertEquals('1', Cache::get('system_setting.sms_enabled'));
@@ -67,7 +70,7 @@ class SystemSettingsTest extends TestCase
             ->assertSet('smsEnabled', true)
             ->call('toggleSms')
             ->assertSet('smsEnabled', false)
-            ->assertNotificationSent();
+            ->assertNotified();
 
         // Verify db was updated
         $this->assertFalse(SystemSetting::smsEnabled());
@@ -78,7 +81,7 @@ class SystemSettingsTest extends TestCase
             ->assertSet('smsEnabled', false)
             ->call('toggleSms')
             ->assertSet('smsEnabled', true)
-            ->assertNotificationSent();
+            ->assertNotified();
 
         $this->assertTrue(SystemSetting::smsEnabled());
     }

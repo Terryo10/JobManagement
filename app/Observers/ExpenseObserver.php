@@ -23,7 +23,7 @@ class ExpenseObserver
             color:          'warning',
             actionUrl:      route('filament.admin.resources.expenses.index'),
             actionText:     'Review Expenses',
-            recipientRoles: ['super_admin', 'manager'],
+            recipientRoles: ['super_admin', 'manager', 'accountant'],
             subjectType:    Expense::class,
             subjectId:      $expense->id,
             priority:       'normal',
