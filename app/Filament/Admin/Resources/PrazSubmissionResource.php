@@ -154,9 +154,10 @@ class PrazSubmissionResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\Action::make('markSubmitted')
-                    ->label('Mark Submitted')
+                    ->label('Submit')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
+                    ->button()
                     ->requiresConfirmation()
                     ->modalHeading('Mark as Submitted')
                     ->modalDescription('This will set the status to "Submitted" and record the current date/time as the submission date.')
