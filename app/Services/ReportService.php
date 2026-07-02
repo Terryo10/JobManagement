@@ -81,15 +81,16 @@ class ReportService
         if ($dateFrom) $query->whereDate('issued_at', '>=', $dateFrom);
         if ($dateTo) $query->whereDate('issued_at', '<=', $dateTo);
 
-        $byStatus = (clone $query)->select('status')
+        // Grouped by status AND currency, and month AND currency, so USD and ZWG are never summed together.
+        $byStatus = (clone $query)->select('status', 'currency')
             ->selectRaw('COUNT(*) as count')
             ->selectRaw('COALESCE(SUM(total), 0) as total')
-            ->groupBy('status')->get();
+            ->groupBy('status', 'currency')->get();
 
         $monthly = Invoice::whereNotIn('status', ['cancelled', 'draft'])
-            ->selectRaw("DATE_FORMAT(issued_at, '%Y-%m') as month")
+            ->selectRaw("DATE_FORMAT(issued_at, '%Y-%m') as month, currency")
             ->selectRaw('COALESCE(SUM(total), 0) as revenue')
-            ->groupByRaw("DATE_FORMAT(issued_at, '%Y-%m')")
+            ->groupByRaw("DATE_FORMAT(issued_at, '%Y-%m'), currency")
             ->orderBy('month')
             ->limit(12)
             ->get();
@@ -97,8 +98,12 @@ class ReportService
         return [
             'by_status' => $byStatus,
             'monthly' => $monthly,
-            'total_revenue' => $byStatus->where('status', 'paid')->sum('total'),
-            'outstanding' => $byStatus->whereIn('status', ['sent', 'overdue'])->sum('total'),
+            'total_revenue_by_currency' => $byStatus->where('status', 'paid')
+                ->groupBy(fn ($row) => $row->currency ?: 'USD')
+                ->map(fn ($rows) => $rows->sum('total')),
+            'outstanding_by_currency' => $byStatus->whereIn('status', ['sent', 'overdue'])
+                ->groupBy(fn ($row) => $row->currency ?: 'USD')
+                ->map(fn ($rows) => $rows->sum('total')),
         ];
     }
 

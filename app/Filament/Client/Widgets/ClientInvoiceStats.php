@@ -16,16 +16,21 @@ class ClientInvoiceStats extends BaseWidget
 
         $query = Invoice::whereHas('client', fn ($q) => $q->where('email', $email));
 
-        $outstanding = (clone $query)->whereIn('status', ['sent', 'overdue'])->sum('total');
+        $byCurrency = fn ($query) => $query->selectRaw('currency, sum(total) as total')->groupBy('currency')->pluck('total', 'currency');
+        $display = fn ($amounts) => $amounts->isEmpty()
+            ? '$0.00'
+            : $amounts->map(fn ($total, $currency) => ($currency ?: 'USD') . ' ' . number_format($total, 2))->implode(' / ');
+
+        $outstandingAmounts = $byCurrency((clone $query)->whereIn('status', ['sent', 'overdue']));
         $overdue = (clone $query)->where('status', 'overdue')->count();
-        $paid = (clone $query)->where('status', 'paid')->sum('total');
+        $paidAmounts = $byCurrency((clone $query)->where('status', 'paid'));
 
         return [
-            Stat::make('Outstanding Balance', '$' . number_format($outstanding, 2))
+            Stat::make('Outstanding Balance', $display($outstandingAmounts))
                 ->icon('heroicon-o-banknotes')
-                ->color($outstanding > 0 ? 'warning' : 'success')
+                ->color($outstandingAmounts->isNotEmpty() ? 'warning' : 'success')
                 ->description($overdue > 0 ? "{$overdue} overdue" : 'All up to date'),
-            Stat::make('Total Paid', '$' . number_format($paid, 2))
+            Stat::make('Total Paid', $display($paidAmounts))
                 ->icon('heroicon-o-check-circle')
                 ->color('success'),
         ];

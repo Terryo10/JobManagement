@@ -163,7 +163,9 @@ class InvoiceResource extends Resource
                 'sent' => 'info', 'signed' => 'success', 'paid' => 'success',
                 'overdue' => 'danger', 'cancelled' => 'gray', default => 'gray',
             }),
-            Tables\Columns\TextColumn::make('total')->money('USD')->sortable(),
+            Tables\Columns\TextColumn::make('total')
+                ->formatStateUsing(fn ($state, $record) => ($record->currency ?? 'USD') . ' ' . number_format($state, 2))
+                ->sortable(),
             Tables\Columns\TextColumn::make('issued_at')->date()->sortable(),
             Tables\Columns\TextColumn::make('due_at')->date()->sortable()
                 ->color(fn ($record) => $record->due_at?->isPast() && ! in_array($record->status, ['paid', 'cancelled']) ? 'danger' : null),
@@ -171,6 +173,9 @@ class InvoiceResource extends Resource
         ->filters([
             Tables\Filters\SelectFilter::make('status')->options([
                 'draft' => 'Draft', 'pending_accountant' => 'Pending Accountant', 'pending_admin' => 'Pending Admin', 'approved' => 'Approved', 'sent' => 'Sent', 'signed' => 'Signed', 'paid' => 'Paid', 'overdue' => 'Overdue', 'cancelled' => 'Cancelled',
+            ]),
+            Tables\Filters\SelectFilter::make('currency')->options([
+                'USD' => 'USD', 'ZWG' => 'ZWG',
             ]),
         ])
         ->actions([
@@ -322,10 +327,14 @@ class InvoiceResource extends Resource
                 Infolists\Components\TextEntry::make('currency'),
             ])->columns(3),
             Infolists\Components\Section::make('Financial Summary')->schema([
-                Infolists\Components\TextEntry::make('subtotal')->money('USD'),
+                Infolists\Components\TextEntry::make('subtotal')
+                    ->formatStateUsing(fn ($state, $record) => ($record->currency ?? 'USD') . ' ' . number_format($state, 2)),
                 Infolists\Components\TextEntry::make('tax_rate')->suffix('%'),
-                Infolists\Components\TextEntry::make('tax_amount')->money('USD'),
-                Infolists\Components\TextEntry::make('total')->money('USD')->weight('bold')->size('lg'),
+                Infolists\Components\TextEntry::make('tax_amount')
+                    ->formatStateUsing(fn ($state, $record) => ($record->currency ?? 'USD') . ' ' . number_format($state, 2)),
+                Infolists\Components\TextEntry::make('total')
+                    ->formatStateUsing(fn ($state, $record) => ($record->currency ?? 'USD') . ' ' . number_format($state, 2))
+                    ->weight('bold')->size('lg'),
             ])->columns(4),
             Infolists\Components\Section::make('Payment')->schema([
                 Infolists\Components\TextEntry::make('issued_at')->date(),

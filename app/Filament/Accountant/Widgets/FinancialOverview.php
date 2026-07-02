@@ -18,22 +18,24 @@ class FinancialOverview extends BaseWidget
         $pendingPo = PurchaseOrder::where('status', 'pending_finance_approval')->count();
         $financeApprovedPo = PurchaseOrder::where('status', 'finance_approved')->count();
 
-        // Invoice Stats
-        $totalInvoiced = Invoice::whereIn('status', ['sent', 'signed', 'paid', 'approved', 'overdue'])
-            ->sum('total');
-        $outstanding = Invoice::whereIn('status', ['sent', 'signed', 'approved', 'overdue'])
-            ->sum('total');
-        $overdue = Invoice::where('status', 'overdue')
+        // Invoice Stats — grouped by currency so USD and ZWG figures aren't summed together
+        $byCurrency = fn ($query) => $query->selectRaw('currency, sum(total) as total')->groupBy('currency')->pluck('total', 'currency');
+        $display = fn ($amounts) => $amounts->isEmpty()
+            ? '$0.00'
+            : $amounts->map(fn ($total, $currency) => ($currency ?: 'USD') . ' ' . number_format($total, 2))->implode(' / ');
+
+        $totalInvoiced = $display($byCurrency(Invoice::whereIn('status', ['sent', 'signed', 'paid', 'approved', 'overdue'])));
+        $outstanding = $display($byCurrency(Invoice::whereIn('status', ['sent', 'signed', 'approved', 'overdue'])));
+        $overdueAmounts = $byCurrency(Invoice::where('status', 'overdue')
             ->orWhere(function ($q) {
                 $q->whereNotIn('status', ['paid', 'cancelled'])
                   ->whereNotNull('due_at')
                   ->where('due_at', '<', now());
-            })
-            ->sum('total');
-        $paidThisMonth = Invoice::where('status', 'paid')
+            }));
+        $overdue = $display($overdueAmounts);
+        $paidThisMonth = $display($byCurrency(Invoice::where('status', 'paid')
             ->whereMonth('paid_at', now()->month)
-            ->whereYear('paid_at', now()->year)
-            ->sum('total');
+            ->whereYear('paid_at', now()->year)));
 
         return [
             // Row 1: Action Items
@@ -48,24 +50,24 @@ class FinancialOverview extends BaseWidget
                 ->descriptionIcon('heroicon-o-clock')
                 ->color('info'),
 
-            Stat::make('Overdue Invoices', '$' . number_format($overdue, 2))
+            Stat::make('Overdue Invoices', $overdue)
                 ->description('Action required on late payments')
                 ->descriptionIcon('heroicon-o-calendar-days')
-                ->color($overdue > 0 ? 'danger' : 'success')
+                ->color($overdueAmounts->isNotEmpty() ? 'danger' : 'success')
                 ->url('/accountant/invoices?tableFilters[status][value]=overdue'),
 
             // Row 2: Financial Summary
-            Stat::make('Total Invoiced', '$' . number_format($totalInvoiced, 2))
+            Stat::make('Total Invoiced', $totalInvoiced)
                 ->description('Life-to-date active invoices')
                 ->descriptionIcon('heroicon-o-document-currency-dollar')
                 ->color('primary'),
 
-            Stat::make('Outstanding Balance', '$' . number_format($outstanding, 2))
+            Stat::make('Outstanding Balance', $outstanding)
                 ->description('Pending collection')
                 ->descriptionIcon('heroicon-o-banknotes')
                 ->color('warning'),
 
-            Stat::make('Paid This Month', '$' . number_format($paidThisMonth, 2))
+            Stat::make('Paid This Month', $paidThisMonth)
                 ->description(now()->format('F Y'))
                 ->descriptionIcon('heroicon-o-check-badge')
                 ->color('success'),

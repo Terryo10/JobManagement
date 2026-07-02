@@ -13,32 +13,45 @@ class RevenueOverviewChart extends ChartWidget
 
     protected function getData(): array
     {
-        $months = collect();
-        $revenues = collect();
-
+        $dates = collect();
         for ($i = 5; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $months->push($date->format('M Y'));
-            $revenues->push(
-                Invoice::where('status', 'paid')
-                    ->whereMonth('paid_at', $date->month)
-                    ->whereYear('paid_at', $date->year)
-                    ->sum('total')
-            );
+            $dates->push(now()->subMonths($i));
         }
 
+        $currencies = Invoice::where('status', 'paid')->distinct()->pluck('currency')->filter()->values();
+        if ($currencies->isEmpty()) {
+            $currencies = collect(['USD']);
+        }
+
+        $palette = [
+            ['#f59e0b', 'rgba(245, 158, 11, 0.1)'],
+            ['#3b82f6', 'rgba(59, 130, 246, 0.1)'],
+            ['#10b981', 'rgba(16, 185, 129, 0.1)'],
+            ['#ef4444', 'rgba(239, 68, 68, 0.1)'],
+        ];
+
+        $datasets = $currencies->values()->map(function ($currency, $index) use ($dates, $palette) {
+            [$borderColor, $backgroundColor] = $palette[$index % count($palette)];
+
+            $data = $dates->map(fn ($date) => Invoice::where('status', 'paid')
+                ->where('currency', $currency)
+                ->whereMonth('paid_at', $date->month)
+                ->whereYear('paid_at', $date->year)
+                ->sum('total'));
+
+            return [
+                'label' => "Revenue ({$currency})",
+                'data' => $data->toArray(),
+                'borderColor' => $borderColor,
+                'backgroundColor' => $backgroundColor,
+                'fill' => true,
+                'tension' => 0.3,
+            ];
+        });
+
         return [
-            'datasets' => [
-                [
-                    'label' => 'Revenue ($)',
-                    'data' => $revenues->toArray(),
-                    'borderColor' => '#f59e0b',
-                    'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
-                    'fill' => true,
-                    'tension' => 0.3,
-                ],
-            ],
-            'labels' => $months->toArray(),
+            'datasets' => $datasets->toArray(),
+            'labels' => $dates->map(fn ($date) => $date->format('M Y'))->toArray(),
         ];
     }
 
