@@ -35,9 +35,15 @@ class ExecutiveSummaryWidget extends BaseWidget
         $totalActive = WorkOrder::whereNotIn('status', ['completed', 'cancelled'])->count();
         $inProgress = WorkOrder::where('status', 'in_progress')->count();
 
-        // 4. Outstanding Balance (from AdminFinancialOverview)
-        $outstanding = Invoice::whereIn('status', ['sent', 'signed', 'approved', 'overdue'])
-            ->sum('total');
+        // 4. Outstanding Balance (from AdminFinancialOverview), split by currency so USD and ZWG aren't mixed
+        $outstandingByCurrency = Invoice::whereIn('status', ['sent', 'signed', 'approved', 'overdue'])
+            ->selectRaw('currency, sum(total) as total')
+            ->groupBy('currency')
+            ->pluck('total', 'currency');
+
+        $outstandingDisplay = $outstandingByCurrency->isEmpty()
+            ? '$0.00'
+            : $outstandingByCurrency->map(fn ($total, $currency) => ($currency ?: 'USD') . ' ' . number_format($total, 2))->implode(' / ');
 
         return [
             Stat::make('Awaiting Your Approval', $awaitingAdmin)
@@ -59,7 +65,7 @@ class ExecutiveSummaryWidget extends BaseWidget
                 ->chart([7, 3, 4, 5, 6, $totalActive])
                 ->url(route('filament.admin.resources.work-orders.index')),
 
-            Stat::make('Outstanding Balance', '$' . number_format($outstanding, 2))
+            Stat::make('Outstanding Balance', $outstandingDisplay)
                 ->description('Unpaid collection')
                 ->descriptionIcon('heroicon-o-banknotes')
                 ->color('warning')

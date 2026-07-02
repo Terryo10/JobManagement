@@ -20,7 +20,15 @@ class MarketingStatsOverview extends StatsOverviewWidget
             ->count();
 
         $openProposals = Proposal::whereIn('status', ['draft', 'submitted'])->count();
-        $openProposalsValue = Proposal::whereIn('status', ['draft', 'submitted'])->sum('value');
+        // Grouped by currency so USD and ZWG proposal values aren't summed together
+        $openProposalsByCurrency = Proposal::whereIn('status', ['draft', 'submitted'])
+            ->selectRaw('currency, sum(value) as value')
+            ->groupBy('currency')
+            ->pluck('value', 'currency');
+
+        $openProposalsValue = $openProposalsByCurrency->isEmpty()
+            ? '$0.00'
+            : $openProposalsByCurrency->map(fn ($value, $currency) => ($currency ?: 'USD') . ' ' . number_format($value, 2))->implode(' / ');
 
         return [
             Stat::make('Active Leads', $activeLeads)
@@ -36,7 +44,7 @@ class MarketingStatsOverview extends StatsOverviewWidget
                 ->url(route('filament.marketing.resources.leads.index', ['tableFilters[status][value]' => 'converted'])),
 
             Stat::make('Open Proposals', $openProposals)
-                ->description('Value: $' . number_format($openProposalsValue, 2))
+                ->description('Value: ' . $openProposalsValue)
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('warning')
                 ->url(route('filament.marketing.resources.proposals.index', ['tableFilters[status][value]' => 'submitted'])),

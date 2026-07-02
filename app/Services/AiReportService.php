@@ -258,16 +258,30 @@ PROMPT;
     {
         $now = now();
 
-        $byStatus = Invoice::selectRaw('status, count(*) as count, sum(total) as total')
-            ->groupBy('status')
+        // Grouped by status AND currency so USD and ZWG amounts are never summed together.
+        $byStatus = Invoice::selectRaw('status, currency, count(*) as count, sum(total) as total')
+            ->groupBy('status', 'currency')
             ->get()
-            ->mapWithKeys(fn ($r) => [$r->status => ['count' => $r->count, 'total' => (float) $r->total]])
+            ->groupBy('status')
+            ->map(fn ($rows) => $rows->mapWithKeys(fn ($r) => [
+                ($r->currency ?: 'USD') => ['count' => $r->count, 'total' => (float) $r->total],
+            ]))
             ->toArray();
 
-        $outstanding = Invoice::whereIn('status', ['sent', 'signed', 'approved', 'overdue'])->sum('total');
-        $paidThisMonth = Invoice::where('status', 'paid')
+        $outstandingByCurrency = Invoice::whereIn('status', ['sent', 'signed', 'approved', 'overdue'])
+            ->selectRaw('currency, sum(total) as total')
+            ->groupBy('currency')
+            ->get()
+            ->mapWithKeys(fn ($r) => [($r->currency ?: 'USD') => (float) $r->total])
+            ->toArray();
+
+        $paidThisMonthByCurrency = Invoice::where('status', 'paid')
             ->whereBetween('paid_at', [$now->copy()->startOfMonth(), $now])
-            ->sum('total');
+            ->selectRaw('currency, sum(total) as total')
+            ->groupBy('currency')
+            ->get()
+            ->mapWithKeys(fn ($r) => [($r->currency ?: 'USD') => (float) $r->total])
+            ->toArray();
 
         $overdue = Invoice::where('status', 'overdue')
             ->orWhere(fn ($q) => $q->whereIn('status', ['sent', 'approved'])->where('due_at', '<', $now))
@@ -278,21 +292,22 @@ PROMPT;
             ->limit(10)
             ->get()
             ->map(fn ($inv) => [
-                'number'  => $inv->invoice_number,
-                'client'  => $inv->client?->company_name,
-                'status'  => $inv->status,
-                'total'   => (float) $inv->total,
-                'due_at'  => $inv->due_at?->format('Y-m-d'),
-                'paid_at' => $inv->paid_at?->format('Y-m-d'),
+                'number'   => $inv->invoice_number,
+                'client'   => $inv->client?->company_name,
+                'status'   => $inv->status,
+                'currency' => $inv->currency ?? 'USD',
+                'total'    => (float) $inv->total,
+                'due_at'   => $inv->due_at?->format('Y-m-d'),
+                'paid_at'  => $inv->paid_at?->format('Y-m-d'),
             ])->toArray();
 
         return [
-            'as_of'             => $now->toDateTimeString(),
-            'invoices_by_status'=> $byStatus,
-            'outstanding_total' => (float) $outstanding,
-            'paid_this_month'   => (float) $paidThisMonth,
-            'overdue_count'     => $overdue,
-            'recent_invoices'   => $recent,
+            'as_of'                         => $now->toDateTimeString(),
+            'invoices_by_status'            => $byStatus,
+            'outstanding_total_by_currency' => $outstandingByCurrency,
+            'paid_this_month_by_currency'   => $paidThisMonthByCurrency,
+            'overdue_count'                 => $overdue,
+            'recent_invoices'               => $recent,
         ];
     }
 
