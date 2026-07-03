@@ -121,7 +121,7 @@
         </div>
         <div class="customer-row">
             <div class="customer-label">Customer Tel/Mobile :</div>
-            <div class="customer-value">{{ $quotation->client?->phone ?? '' }}</div>
+            <div class="customer-value">{{ $quotation->phone ?: $quotation->client?->phone ?? '' }}</div>
         </div>
     </div>
 
