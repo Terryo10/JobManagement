@@ -12,7 +12,7 @@ class Quotation extends Model
 {
     use LogsActivity;
     protected $fillable = [
-        'quotation_number', 'client_id', 'work_order_id', 'created_by',
+        'quotation_number', 'client_id', 'phone', 'work_order_id', 'created_by',
         'status', 'currency', 'subtotal', 'tax_rate', 'tax_amount', 'total',
         'valid_until', 'notes', 'bank_account_id',
     ];

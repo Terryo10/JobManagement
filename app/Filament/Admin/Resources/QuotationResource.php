@@ -37,7 +37,18 @@ class QuotationResource extends Resource
                         ->unique(ignoreRecord: true)
                         ->default(fn () => 'QUO-' . now()->format('Y') . '-' . str_pad(Quotation::count() + 1, 4, '0', STR_PAD_LEFT)),
                     Forms\Components\Select::make('client_id')
-                        ->relationship('client', 'company_name')->searchable()->preload()->required(),
+                        ->relationship('client', 'company_name')->searchable()->preload()->required()
+                        ->live()
+                        ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                            if ($state && blank($get('phone'))) {
+                                $set('phone', \App\Models\Client::find($state)?->phone);
+                            }
+                        }),
+                    Forms\Components\TextInput::make('phone')
+                        ->label('Phone Number')
+                        ->tel()
+                        ->maxLength(30)
+                        ->helperText('Defaults to the client\'s phone; edit to override for this quotation'),
                     Forms\Components\Select::make('work_order_id')
                         ->relationship('workOrder', 'reference_number')
                         ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->reference_number} – {$record->title}")
@@ -244,6 +255,7 @@ class QuotationResource extends Resource
             Infolists\Components\Section::make('Quotation Details')->schema([
                 Infolists\Components\TextEntry::make('quotation_number'),
                 Infolists\Components\TextEntry::make('client.company_name'),
+                Infolists\Components\TextEntry::make('phone')->label('Phone Number')->placeholder('—'),
                 Infolists\Components\TextEntry::make('workOrder.reference_number')->placeholder('—'),
                 Infolists\Components\TextEntry::make('status')->badge(),
                 Infolists\Components\TextEntry::make('subtotal')->money('usd'),
