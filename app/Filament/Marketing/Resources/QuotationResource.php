@@ -39,11 +39,6 @@ class QuotationResource extends Resource
                 Forms\Components\Tabs\Tab::make('Details')
                     ->icon('heroicon-o-information-circle')
                     ->schema([
-                        Forms\Components\TextInput::make('quotation_number')
-                            ->required()
-                            ->maxLength(50)
-                            ->unique(ignoreRecord: true)
-                            ->default(fn () => 'QUO-' . now()->format('Y') . '-' . str_pad(Quotation::count() + 1, 4, '0', STR_PAD_LEFT)),
                         Forms\Components\Select::make('client_id')
                             ->relationship('client', 'company_name')
                             ->searchable()

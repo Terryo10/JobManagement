@@ -17,6 +17,22 @@ class Quotation extends Model
         'valid_until', 'notes', 'bank_account_id',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Quotation $quotation) {
+            if (empty($quotation->quotation_number)) {
+                $year = now()->year;
+                $last = static::where('quotation_number', 'like', "QUO-{$year}-%")
+                    ->orderByDesc('quotation_number')
+                    ->value('quotation_number');
+                $next = $last ? ((int) substr($last, strrpos($last, '-') + 1)) + 1 : 1;
+                $quotation->quotation_number = 'QUO-' . $year . '-' . str_pad($next, 4, '0', STR_PAD_LEFT);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

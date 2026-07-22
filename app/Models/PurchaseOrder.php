@@ -22,6 +22,22 @@ class PurchaseOrder extends Model
         'gl_account', 'gl_account_name',
     ];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (PurchaseOrder $purchaseOrder) {
+            if (empty($purchaseOrder->reference_number)) {
+                $year = now()->year;
+                $last = static::where('reference_number', 'like', "REQ-{$year}-%")
+                    ->orderByDesc('reference_number')
+                    ->value('reference_number');
+                $next = $last ? ((int) substr($last, strrpos($last, '-') + 1)) + 1 : 1;
+                $purchaseOrder->reference_number = 'REQ-' . $year . '-' . str_pad($next, 4, '0', STR_PAD_LEFT);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

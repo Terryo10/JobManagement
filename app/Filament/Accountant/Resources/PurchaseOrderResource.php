@@ -89,11 +89,6 @@ class PurchaseOrderResource extends Resource
                     ->options(['USD' => 'USD', 'ZWG' => 'ZWG'])
                     ->default('USD')
                     ->required(),
-                Forms\Components\TextInput::make('reference_number')
-                    ->required()
-                    ->maxLength(50)
-                    ->unique(ignoreRecord: true)
-                    ->default(fn () => 'REQ-' . now()->format('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT)),
                 Forms\Components\Select::make('ordered_by')
                     ->relationship('orderedBy', 'name')
                     ->label('Requested By')
