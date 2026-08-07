@@ -214,7 +214,7 @@ class ComposeMessage extends Page implements HasForms
             foreach ($channels as $channel) {
                 try {
                     (new SendNotificationJob($userId, $event, $channel))->handle(
-                        app(\App\Notifications\Channels\InfobipEmailChannel::class),
+                        app(\App\Notifications\Channels\MailChannel::class),
                         app(\App\Notifications\Channels\InfobipSmsChannel::class),
                         app(\App\Notifications\Channels\InfobipWhatsAppChannel::class),
                     );

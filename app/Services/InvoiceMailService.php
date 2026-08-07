@@ -2,44 +2,27 @@
 
 namespace App\Services;
 
+use App\Mail\InvoiceSentToClient;
+use App\Mail\InvoiceSigned;
 use App\Models\Invoice;
-use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Mail;
 
 class InvoiceMailService
 {
-    public function __construct(private InfobipClient $client) {}
-
     /**
-     * Send the "invoice sent to client" email via Infobip REST API.
+     * Send the "invoice sent to client" email.
      */
     public function sendInvoiceToClient(Invoice $invoice, string $toEmail): void
     {
-        $html = View::make('emails.invoice-sent', ['invoice' => $invoice])->render();
-
-        $this->client->sendEmail(
-            to: $toEmail,
-            subject: 'New Invoice - ' . $invoice->invoice_number,
-            htmlBody: $html,
-        );
+        Mail::to($toEmail)->send(new InvoiceSentToClient($invoice));
     }
 
     /**
-     * Send the "invoice signed" confirmation email via Infobip REST API.
+     * Send the "invoice signed" confirmation email.
      * Includes a download link to the PDF instead of attaching it.
      */
     public function sendInvoiceSigned(Invoice $invoice, string $toEmail): void
     {
-        $downloadUrl = route('invoices.client.download', ['invoice' => $invoice->id]);
-
-        $html = View::make('emails.invoice-signed', [
-            'invoice'     => $invoice,
-            'downloadUrl' => $downloadUrl,
-        ])->render();
-
-        $this->client->sendEmail(
-            to: $toEmail,
-            subject: 'Signed Invoice - ' . $invoice->invoice_number,
-            htmlBody: $html,
-        );
+        Mail::to($toEmail)->send(new InvoiceSigned($invoice));
     }
 }

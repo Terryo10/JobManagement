@@ -184,7 +184,7 @@ class SendMessageAction extends Action
                     try {
                         // Run synchronously so errors surface immediately in the UI
                         (new SendNotificationJob($recipientUserId, $event, $channel))->handle(
-                            app(\App\Notifications\Channels\InfobipEmailChannel::class),
+                            app(\App\Notifications\Channels\MailChannel::class),
                             app(\App\Notifications\Channels\InfobipSmsChannel::class),
                             app(\App\Notifications\Channels\InfobipWhatsAppChannel::class),
                         );

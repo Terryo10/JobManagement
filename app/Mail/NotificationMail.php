@@ -17,7 +17,7 @@ class NotificationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: $this->event->title);
+        return new Envelope(subject: $this->event->subject ?? $this->event->title);
     }
 
     public function content(): Content
@@ -28,6 +28,7 @@ class NotificationMail extends Mailable
             'actionUrl'  => $this->event->actionUrl,
             'actionText' => $this->event->actionText,
             'color'      => $this->event->color,
+            'typeLabel'  => config('notifications')[$this->event->type]['label'] ?? null,
         ]);
     }
 }

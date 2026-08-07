@@ -10,7 +10,6 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 use App\Models\Invoice;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceSigned extends Mailable
 {
@@ -43,6 +42,9 @@ class InvoiceSigned extends Mailable
     {
         return new Content(
             view: 'emails.invoice-signed',
+            with: [
+                'downloadUrl' => route('invoices.client.download', ['invoice' => $this->invoice->id]),
+            ],
         );
     }
 
@@ -53,14 +55,8 @@ class InvoiceSigned extends Mailable
      */
     public function attachments(): array
     {
-        // Generate the PDF in memory
-        $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $this->invoice]);
-
-        return [
-            \Illuminate\Mail\Mailables\Attachment::fromData(
-                fn () => $pdf->output(),
-                $this->invoice->invoice_number . '.pdf'
-            )->withMime('application/pdf'),
-        ];
+        // The email links to the PDF download route instead of attaching it,
+        // which keeps the message small and the link access-controlled.
+        return [];
     }
 }
