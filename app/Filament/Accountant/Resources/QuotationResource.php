@@ -4,10 +4,12 @@ namespace App\Filament\Accountant\Resources;
 
 use App\Filament\Accountant\Resources\QuotationResource\Pages;
 use App\Filament\Accountant\Resources\QuotationResource\RelationManagers\DocumentsRelationManager;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
+use App\Filament\Shared\Concerns\HasQuotationConversionActions;
+use App\Models\BankAccount;
 use App\Models\Invoice;
 use App\Models\Quotation;
 use App\Models\RateCard;
-use App\Models\BankAccount;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -19,14 +21,17 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class QuotationResource extends Resource
 {
-    use EnforcesAdminDelete;
+    use EnforcesAdminDelete, HasQuotationConversionActions;
+
     protected static ?string $model = Quotation::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
+
     protected static ?string $navigationLabel = 'Quotations';
+
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
@@ -54,12 +59,12 @@ class QuotationResource extends Resource
                         ->helperText('Link to a specific job card'),
                     Forms\Components\Select::make('status')
                         ->options([
-                            'draft'     => 'Draft',
-                            'sent'      => 'Sent',
-                            'accepted'  => 'Accepted',
-                            'rejected'  => 'Rejected',
-                            'expired'   => 'Expired',
-                            'converted' => 'Converted to Invoice',
+                            'draft' => 'Draft',
+                            'sent' => 'Sent',
+                            'accepted' => 'Accepted',
+                            'rejected' => 'Rejected',
+                            'expired' => 'Expired',
+                            'converted' => 'Converted',
                         ])
                         ->default('draft')->required(),
                     Forms\Components\Select::make('currency')
@@ -171,78 +176,80 @@ class QuotationResource extends Resource
             Tables\Columns\TextColumn::make('quotation_number')->searchable()->sortable(),
             Tables\Columns\TextColumn::make('client.company_name')->label('Client')->sortable()->limit(25),
             Tables\Columns\TextColumn::make('status')->badge()->color(fn ($state) => match ($state) {
-                'draft'     => 'gray',
-                'sent'      => 'info',
-                'accepted'  => 'success',
-                'rejected'  => 'danger',
-                'expired'   => 'warning',
+                'draft' => 'gray',
+                'sent' => 'info',
+                'accepted' => 'success',
+                'rejected' => 'danger',
+                'expired' => 'warning',
                 'converted' => 'purple',
-                default     => 'gray',
+                default => 'gray',
             }),
             Tables\Columns\TextColumn::make('total')->money('USD')->sortable(),
             Tables\Columns\TextColumn::make('valid_until')->date()->sortable()
                 ->color(fn ($record) => $record->valid_until?->isPast() && ! in_array($record->status, ['accepted', 'converted']) ? 'danger' : null),
             Tables\Columns\TextColumn::make('created_at')->date()->sortable()->toggleable(),
         ])
-        ->filters([
-            Tables\Filters\SelectFilter::make('status')->options([
-                'draft' => 'Draft', 'sent' => 'Sent', 'accepted' => 'Accepted',
-                'rejected' => 'Rejected', 'expired' => 'Expired', 'converted' => 'Converted',
-            ]),
-        ])
-        ->actions([
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\Action::make('downloadPdf')
-                ->label('Download PDF')
-                ->icon('heroicon-o-document-arrow-down')
-                ->color('gray')
-                ->action(function ($record) {
-                    $record->load('items', 'client', 'workOrder', 'createdBy', 'bankAccount');
-                    $pdf = Pdf::loadView('pdf.quotation', ['quotation' => $record]);
-                    return response()->streamDownload(
-                        fn () => print($pdf->output()),
-                        "quotation-{$record->quotation_number}.pdf"
-                    );
-                }),
-            Tables\Actions\Action::make('convertToInvoice')
-                ->label('Convert to Invoice')
-                ->icon('heroicon-o-arrow-right-circle')
-                ->color('success')
-                ->requiresConfirmation()
-                ->modalHeading('Convert Quotation to Invoice')
-                ->modalDescription('This will create a new Invoice from this quotation and mark the quotation as converted.')
-                ->visible(fn ($record) => in_array($record->status, ['sent', 'accepted']))
-                ->action(function ($record) {
-                    $record->load('items');
-                    $invoice = Invoice::create([
-                        'invoice_number' => 'INV-' . now()->format('Y') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT),
-                        'client_id'      => $record->client_id,
-                        'work_order_id'  => $record->work_order_id,
-                        'status'         => 'draft',
-                        'currency'       => $record->currency,
-                        'subtotal'       => $record->subtotal,
-                        'tax_rate'       => $record->tax_rate,
-                        'tax_amount'     => $record->tax_amount,
-                        'total'          => $record->total,
-                        'notes'          => $record->notes,
-                        'created_by'     => auth()->id(),
-                        'bank_account_id' => $record->bank_account_id,
-                    ]);
-                    foreach ($record->items as $item) {
-                        $invoice->items()->create([
-                            'description'  => $item->description,
-                            'quantity'     => $item->quantity,
-                            'unit'         => $item->unit,
-                            'unit_price'   => $item->unit_price,
-                            'total'        => $item->total,
-                            'rate_card_id' => $item->rate_card_id,
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')->options([
+                    'draft' => 'Draft', 'sent' => 'Sent', 'accepted' => 'Accepted',
+                    'rejected' => 'Rejected', 'expired' => 'Expired', 'converted' => 'Converted',
+                ]),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                ...self::quotationConversionActions(),
+                Tables\Actions\Action::make('downloadPdf')
+                    ->label('Download PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->action(function ($record) {
+                        $record->load('items', 'client', 'workOrder', 'createdBy', 'bankAccount');
+                        $pdf = Pdf::loadView('pdf.quotation', ['quotation' => $record]);
+
+                        return response()->streamDownload(
+                            fn () => print ($pdf->output()),
+                            "quotation-{$record->quotation_number}.pdf"
+                        );
+                    }),
+                Tables\Actions\Action::make('convertToInvoice')
+                    ->label('Convert to Invoice')
+                    ->icon('heroicon-o-arrow-right-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Convert Quotation to Invoice')
+                    ->modalDescription('This will create a new Invoice from this quotation and mark the quotation as converted.')
+                    ->visible(fn ($record) => in_array($record->status, ['sent', 'accepted']))
+                    ->action(function ($record) {
+                        $record->load('items');
+                        $invoice = Invoice::create([
+                            'invoice_number' => 'INV-'.now()->format('Y').'-'.str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT),
+                            'client_id' => $record->client_id,
+                            'work_order_id' => $record->work_order_id,
+                            'status' => 'draft',
+                            'currency' => $record->currency,
+                            'subtotal' => $record->subtotal,
+                            'tax_rate' => $record->tax_rate,
+                            'tax_amount' => $record->tax_amount,
+                            'total' => $record->total,
+                            'notes' => $record->notes,
+                            'created_by' => auth()->id(),
+                            'bank_account_id' => $record->bank_account_id,
                         ]);
-                    }
-                    $record->update(['status' => 'converted']);
-                    Notification::make()->title("Invoice {$invoice->invoice_number} created successfully.")->success()->send();
-                }),
-        ]);
+                        foreach ($record->items as $item) {
+                            $invoice->items()->create([
+                                'description' => $item->description,
+                                'quantity' => $item->quantity,
+                                'unit' => $item->unit,
+                                'unit_price' => $item->unit_price,
+                                'total' => $item->total,
+                                'rate_card_id' => $item->rate_card_id,
+                            ]);
+                        }
+                        $record->update(['status' => 'converted']);
+                        Notification::make()->title("Invoice {$invoice->invoice_number} created successfully.")->success()->send();
+                    }),
+            ]);
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -276,10 +283,10 @@ class QuotationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListQuotations::route('/'),
+            'index' => Pages\ListQuotations::route('/'),
             'create' => Pages\CreateQuotation::route('/create'),
-            'edit'   => Pages\EditQuotation::route('/{record}/edit'),
-            'view'   => Pages\ViewQuotation::route('/{record}'),
+            'edit' => Pages\EditQuotation::route('/{record}/edit'),
+            'view' => Pages\ViewQuotation::route('/{record}'),
         ];
     }
 }

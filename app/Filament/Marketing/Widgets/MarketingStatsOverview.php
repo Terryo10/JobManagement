@@ -4,6 +4,7 @@ namespace App\Filament\Marketing\Widgets;
 
 use App\Models\Lead;
 use App\Models\Proposal;
+use App\Models\WorkOrder;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -28,7 +29,9 @@ class MarketingStatsOverview extends StatsOverviewWidget
 
         $openProposalsValue = $openProposalsByCurrency->isEmpty()
             ? '$0.00'
-            : $openProposalsByCurrency->map(fn ($value, $currency) => ($currency ?: 'USD') . ' ' . number_format($value, 2))->implode(' / ');
+            : $openProposalsByCurrency->map(fn ($value, $currency) => ($currency ?: 'USD').' '.number_format($value, 2))->implode(' / ');
+
+        $activeJobCards = WorkOrder::whereIn('status', ['pending', 'in_progress', 'on_hold'])->count();
 
         return [
             Stat::make('Active Leads', $activeLeads)
@@ -44,10 +47,16 @@ class MarketingStatsOverview extends StatsOverviewWidget
                 ->url(route('filament.marketing.resources.leads.index', ['tableFilters[status][value]' => 'converted'])),
 
             Stat::make('Open Proposals', $openProposals)
-                ->description('Value: ' . $openProposalsValue)
+                ->description('Value: '.$openProposalsValue)
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('warning')
                 ->url(route('filament.marketing.resources.proposals.index', ['tableFilters[status][value]' => 'submitted'])),
+
+            Stat::make('Active Job Cards', $activeJobCards)
+                ->description('Pending, in progress & on hold')
+                ->descriptionIcon('heroicon-m-clipboard-document-list')
+                ->color('info')
+                ->url(route('filament.marketing.resources.work-orders.index')),
         ];
     }
 }

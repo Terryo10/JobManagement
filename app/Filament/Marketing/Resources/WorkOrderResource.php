@@ -3,6 +3,7 @@
 namespace App\Filament\Marketing\Resources;
 
 use App\Filament\Marketing\Resources\WorkOrderResource\Pages;
+use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 use App\Models\WorkOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
@@ -12,15 +13,23 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 
 class WorkOrderResource extends Resource
 {
     use EnforcesAdminDelete;
+
     protected static ?string $model = WorkOrder::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?string $navigationLabel = 'Work Orders';
+
+    protected static ?string $navigationLabel = 'Job Cards';
+
+    protected static ?string $modelLabel = 'Job Card';
+
+    protected static ?string $pluralModelLabel = 'Job Cards';
+
     protected static ?string $navigationGroup = 'Operations';
+
     protected static ?int $navigationSort = 1;
 
     public static function canCreate(): bool
@@ -76,8 +85,7 @@ class WorkOrderResource extends Resource
                                     ->preload()
                                     ->label('Department'),
                                 Forms\Components\Select::make('lead_id')
-                                    ->relationship('lead', 'contact_name', fn ($query, Forms\Get $get) =>
-                                        $get('client_id') ? $query->where('client_id', $get('client_id')) : $query->whereRaw('1 = 0')
+                                    ->relationship('lead', 'contact_name', fn ($query, Forms\Get $get) => $get('client_id') ? $query->where('client_id', $get('client_id')) : $query->whereRaw('1 = 0')
                                     )
                                     ->searchable()
                                     ->preload()
@@ -349,29 +357,30 @@ class WorkOrderResource extends Resource
             }),
             Tables\Columns\TextColumn::make('deadline')->date()->sortable(),
         ])
-        ->filters([
-            Tables\Filters\SelectFilter::make('status')->options(['pending' => 'Pending', 'in_progress' => 'In Progress', 'on_hold' => 'On Hold', 'completed' => 'Completed', 'cancelled' => 'Cancelled']),
-            Tables\Filters\SelectFilter::make('category')->options(['media' => 'Media', 'civil_works' => 'Civil Works', 'energy' => 'Energy', 'warehouse' => 'Warehouse']),
-        ])
-        ->actions([
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\Action::make('downloadPdf')
-                ->label('PDF')
-                ->icon('heroicon-o-document-arrow-down')
-                ->color('gray')
-                ->action(function ($record) {
-                    $record->load(['client', 'assignedDepartment', 'claimedBy', 'createdBy', 'lead']);
-                    $pdf = Pdf::loadView('pdf.job-card', [
-                        'workOrder'   => $record,
-                        'generatedAt' => now()->format('d M Y H:i'),
-                    ])->setPaper('a4');
-                    return response()->streamDownload(
-                        fn () => print($pdf->output()),
-                        'job-card-' . $record->reference_number . '.pdf'
-                    );
-                }),
-        ]);
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')->options(['pending' => 'Pending', 'in_progress' => 'In Progress', 'on_hold' => 'On Hold', 'completed' => 'Completed', 'cancelled' => 'Cancelled']),
+                Tables\Filters\SelectFilter::make('category')->options(['media' => 'Media', 'civil_works' => 'Civil Works', 'energy' => 'Energy', 'warehouse' => 'Warehouse']),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('downloadPdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->action(function ($record) {
+                        $record->load(['client', 'assignedDepartment', 'claimedBy', 'createdBy', 'lead']);
+                        $pdf = Pdf::loadView('pdf.job-card', [
+                            'workOrder' => $record,
+                            'generatedAt' => now()->format('d M Y H:i'),
+                        ])->setPaper('a4');
+
+                        return response()->streamDownload(
+                            fn () => print ($pdf->output()),
+                            'job-card-'.$record->reference_number.'.pdf'
+                        );
+                    }),
+            ]);
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -418,10 +427,10 @@ class WorkOrderResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListWorkOrders::route('/'),
+            'index' => Pages\ListWorkOrders::route('/'),
             'create' => Pages\CreateWorkOrder::route('/create'),
-            'view'   => Pages\ViewWorkOrder::route('/{record}'),
-            'edit'   => Pages\EditWorkOrder::route('/{record}/edit'),
+            'view' => Pages\ViewWorkOrder::route('/{record}'),
+            'edit' => Pages\EditWorkOrder::route('/{record}/edit'),
         ];
     }
 }
