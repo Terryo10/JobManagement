@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Job Summary Report</title>
+    <title>Job Card Report</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #222; font-size: 10.5px; line-height: 1.4; }
@@ -91,7 +91,7 @@
                 <div class="company-sub">Job Management System</div>
             </div>
             <div class="header-right">
-                <div class="doc-type">Job Summary</div>
+                <div class="doc-type">Job Card Report</div>
                 <div class="detail-line"><span class="detail-label">Generated:</span> {{ $generatedAt }}</div>
                 @if($filterStatus)
                     <div class="detail-line"><span class="detail-label">Status Filter:</span> {{ ucfirst(str_replace('_', ' ', $filterStatus)) }}</div>
@@ -99,7 +99,7 @@
                 @if($filterCategory)
                     <div class="detail-line"><span class="detail-label">Category Filter:</span> {{ ucfirst(str_replace('_', ' ', $filterCategory)) }}</div>
                 @endif
-                <div class="detail-line"><span class="detail-label">Total Jobs:</span> {{ $records->count() }}</div>
+                <div class="detail-line"><span class="detail-label">Total Job Cards:</span> {{ $records->count() }}</div>
             </div>
         </div>
     </div>
@@ -116,7 +116,7 @@
     <div class="summary-bar">
         <div class="summary-item">
             <div class="summary-number">{{ $records->count() }}</div>
-            <div class="summary-label">Total Jobs</div>
+            <div class="summary-label">Total Job Cards</div>
         </div>
         <div class="summary-item">
             <div class="summary-number">{{ $inProgressJobs }}</div>

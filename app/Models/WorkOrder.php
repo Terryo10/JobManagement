@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class WorkOrder extends Model
 {
-    use SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes;
 
     protected static function booted(): void
     {
@@ -30,7 +30,7 @@ class WorkOrder extends Model
                     ->orderByDesc('reference_number')
                     ->value('reference_number');
                 $next = $last ? ((int) substr($last, strrpos($last, '-') + 1)) + 1 : 1;
-                $workOrder->reference_number = 'WO-' . $year . '-' . str_pad($next, 4, '0', STR_PAD_LEFT);
+                $workOrder->reference_number = 'WO-'.$year.'-'.str_pad($next, 4, '0', STR_PAD_LEFT);
             }
         });
     }
@@ -71,6 +71,7 @@ class WorkOrder extends Model
                 'claimed_at' => now(),
                 'status' => 'in_progress',
             ]);
+
             return true;
         });
     }
@@ -155,5 +156,15 @@ class WorkOrder extends Model
     public function purchaseOrders(): HasMany
     {
         return $this->hasMany(PurchaseOrder::class);
+    }
+
+    public function quotations(): HasMany
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
+    public function salesOrders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class);
     }
 }

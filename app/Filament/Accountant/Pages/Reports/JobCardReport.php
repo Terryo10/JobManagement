@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Filament\Admin\Pages\Reports;
+namespace App\Filament\Accountant\Pages\Reports;
 
-use App\Filament\Admin\Resources\WorkOrderResource;
+use App\Filament\Accountant\Resources\WorkOrderResource;
 use App\Filament\Shared\Pages\BaseJobCardReport;
 
-class JobSummaryReport extends BaseJobCardReport
+class JobCardReport extends BaseJobCardReport
 {
     protected static function workOrderResourceClass(): string
     {
