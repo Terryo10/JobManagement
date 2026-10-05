@@ -168,6 +168,7 @@ class PurchaseOrderResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->options([
+                    'draft'                    => 'Draft',
                     'pending_finance_approval' => 'Pending My Approval',
                     'finance_approved'         => 'Awaiting Admin',
                     'approved'                 => 'Fully Approved',
@@ -175,6 +176,23 @@ class PurchaseOrderResource extends Resource
                 ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('submit')
+                    ->label('Submit')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('primary')
+                    ->requiresConfirmation()
+                    ->modalHeading('Submit Requisition')
+                    ->modalDescription('This requisition will be sent for finance approval.')
+                    ->visible(fn ($record) => $record->status === 'draft')
+                    ->action(function ($record) {
+                        abort_unless($record->status === 'draft', 403);
+
+                        $record->update(['status' => 'pending_finance_approval']);
+                        Notification::make()
+                            ->title('Requisition submitted for finance approval.')
+                            ->success()
+                            ->send();
+                    }),
                 // Direct approve/reject – no dropdowns
                 Tables\Actions\Action::make('approve')
                     ->label('Approve')
@@ -241,7 +259,7 @@ class PurchaseOrderResource extends Resource
                 Tables\Actions\ViewAction::make()->iconButton(),
                 Tables\Actions\EditAction::make()
                     ->iconButton()
-                    ->visible(fn ($record) => $record->status === 'pending_finance_approval'),
+                    ->visible(fn ($record) => in_array($record->status, ['draft', 'pending_finance_approval'])),
                 Tables\Actions\Action::make('downloadPdf')
                     ->label('Download PDF')
                     ->icon('heroicon-o-document-arrow-down')

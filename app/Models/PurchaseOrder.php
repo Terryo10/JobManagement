@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseOrder extends Model
 {
@@ -29,10 +30,36 @@ class PurchaseOrder extends Model
         static::creating(function (PurchaseOrder $purchaseOrder) {
             if (empty($purchaseOrder->reference_number)) {
                 $year = now()->year;
-                $last = static::where('reference_number', 'like', "REQ-{$year}-%")
-                    ->orderByDesc('reference_number')
-                    ->value('reference_number');
-                $next = $last ? ((int) substr($last, strrpos($last, '-') + 1)) + 1 : 1;
+                $next = DB::transaction(function () use ($year): int {
+                    if (! DB::table('requisition_sequences')->where('year', $year)->exists()) {
+                        // Seed the counter from deployed requisitions the first time a year is used.
+                        $lastNumber = 0;
+                        foreach (DB::table('purchase_orders')
+                            ->where('reference_number', 'like', "REQ-{$year}-%")
+                            ->cursor() as $order) {
+                            if (preg_match("/^REQ-{$year}-(\d+)$/", $order->reference_number, $matches)) {
+                                $lastNumber = max($lastNumber, (int) $matches[1]);
+                            }
+                        }
+
+                        DB::table('requisition_sequences')->insertOrIgnore([
+                            'year' => $year,
+                            'last_number' => $lastNumber,
+                        ]);
+                    }
+
+                    $sequence = DB::table('requisition_sequences')
+                        ->where('year', $year)
+                        ->lockForUpdate()
+                        ->first();
+
+                    $next = $sequence->last_number + 1;
+                    DB::table('requisition_sequences')
+                        ->where('year', $year)
+                        ->update(['last_number' => $next]);
+
+                    return $next;
+                });
                 $purchaseOrder->reference_number = 'REQ-' . $year . '-' . str_pad($next, 4, '0', STR_PAD_LEFT);
             }
         });
