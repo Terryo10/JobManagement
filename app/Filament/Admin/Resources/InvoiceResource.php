@@ -34,9 +34,9 @@ class InvoiceResource extends Resource
         return $form->schema([
             Forms\Components\Tabs::make('Invoice')->tabs([
                 Forms\Components\Tabs\Tab::make('Details')->icon('heroicon-o-information-circle')->schema([
-                    Forms\Components\TextInput::make('invoice_number')->required()->maxLength(50)
-                        ->unique(ignoreRecord: true)
-                        ->default(fn () => 'INV-' . now()->format('Y') . '-' . str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT)),
+                    Forms\Components\TextInput::make('invoice_number')
+                        ->disabled()->dehydrated(false)
+                        ->placeholder('Auto-generated on save'),
                     Forms\Components\Select::make('client_id')
                         ->relationship('client', 'company_name')->searchable()->preload()->required(),
                     Forms\Components\Select::make('work_order_id')
@@ -149,6 +149,7 @@ class InvoiceResource extends Resource
     {
         return $table->columns([
             Tables\Columns\TextColumn::make('invoice_number')->searchable()->sortable(),
+            Tables\Columns\TextColumn::make('quotation.quotation_number')->label('Quotation')->placeholder('—'),
             Tables\Columns\TextColumn::make('client.company_name')->sortable()->limit(25),
             Tables\Columns\TextColumn::make('workOrder.reference_number')->label('Job Card')->placeholder('—'),
             Tables\Columns\TextColumn::make('status')->badge()->color(fn ($state) => match ($state) {
@@ -332,6 +333,10 @@ class InvoiceResource extends Resource
         return $infolist->schema([
             Infolists\Components\Section::make('Invoice Details')->schema([
                 Infolists\Components\TextEntry::make('invoice_number'),
+                Infolists\Components\TextEntry::make('quotation.quotation_number')->label('Source Quotation')->placeholder('—')
+                    ->url(fn ($record) => $record->quotation_id
+                        ? QuotationResource::getUrl('view', ['record' => $record->quotation_id])
+                        : null),
                 Infolists\Components\TextEntry::make('client.company_name'),
                 Infolists\Components\TextEntry::make('workOrder.reference_number')->label('Job Card'),
                 Infolists\Components\TextEntry::make('status')->badge(),

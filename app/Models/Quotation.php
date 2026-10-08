@@ -86,4 +86,9 @@ class Quotation extends Model
     {
         return $this->hasOne(SalesOrder::class);
     }
+
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
+    }
 }

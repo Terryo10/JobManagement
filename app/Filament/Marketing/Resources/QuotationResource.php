@@ -7,7 +7,6 @@ use App\Filament\Marketing\Resources\QuotationResource\RelationManagers\Document
 use App\Filament\Shared\Concerns\EnforcesAdminDelete;
 use App\Filament\Shared\Concerns\HasQuotationConversionActions;
 use App\Models\BankAccount;
-use App\Models\Invoice;
 use App\Models\Quotation;
 use App\Models\RateCard;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -17,7 +16,6 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -232,43 +230,6 @@ class QuotationResource extends Resource
                             fn () => print ($pdf->output()),
                             "quotation-{$record->quotation_number}.pdf"
                         );
-                    }),
-                Tables\Actions\Action::make('convertToInvoice')
-                    ->label('Convert to Invoice')
-                    ->icon('heroicon-o-arrow-right-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Convert Quotation to Invoice')
-                    ->modalDescription('This will create a new Invoice from this quotation and mark the quotation as converted.')
-                    ->visible(fn ($record) => in_array($record->status, ['sent', 'accepted']))
-                    ->action(function ($record) {
-                        $record->load('items');
-                        $invoice = Invoice::create([
-                            'invoice_number' => 'INV-'.now()->format('Y').'-'.str_pad(Invoice::count() + 1, 4, '0', STR_PAD_LEFT),
-                            'client_id' => $record->client_id,
-                            'work_order_id' => $record->work_order_id,
-                            'status' => 'draft',
-                            'currency' => $record->currency,
-                            'subtotal' => $record->subtotal,
-                            'tax_rate' => $record->tax_rate,
-                            'tax_amount' => $record->tax_amount,
-                            'total' => $record->total,
-                            'notes' => $record->notes,
-                            'created_by' => auth()->id(),
-                            'bank_account_id' => $record->bank_account_id,
-                        ]);
-                        foreach ($record->items as $item) {
-                            $invoice->items()->create([
-                                'description' => $item->description,
-                                'quantity' => $item->quantity,
-                                'unit' => $item->unit,
-                                'unit_price' => $item->unit_price,
-                                'total' => $item->total,
-                                'rate_card_id' => $item->rate_card_id,
-                            ]);
-                        }
-                        $record->update(['status' => 'converted']);
-                        Notification::make()->title("Invoice {$invoice->invoice_number} created successfully.")->success()->send();
                     }),
             ]);
     }

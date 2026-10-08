@@ -5,9 +5,11 @@ namespace App\Filament\Shared\Concerns;
 use App\Models\Department;
 use App\Models\Quotation;
 use App\Services\QuotationConversionService;
+use App\Services\QuotationInvoiceConversionService;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Tables;
+use Illuminate\Validation\ValidationException;
 
 trait HasQuotationConversionActions
 {
@@ -57,6 +59,51 @@ trait HasQuotationConversionActions
                 ->url(fn (Quotation $record) => static::workOrderResource()::getUrl('view', [
                     'record' => $record->work_order_id,
                 ])),
+            Tables\Actions\Action::make('convertToInvoice')
+                ->label('Convert to Invoice')
+                ->icon('heroicon-o-document-currency-dollar')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Create Draft Invoice from Quotation')
+                ->modalDescription('Copies quotation line items into a draft invoice with calculated totals. The invoice then follows the normal approval process.')
+                ->visible(fn (Quotation $record) => in_array($record->status, ['sent', 'accepted', 'converted'], true)
+                    && ! $record->invoice()->withTrashed()->exists())
+                ->action(function (Quotation $record) {
+                    try {
+                        $invoice = app(QuotationInvoiceConversionService::class)
+                            ->convert($record, auth()->user());
+                    } catch (ValidationException $exception) {
+                        Notification::make()
+                            ->title(collect($exception->errors())->flatten()->first())
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    Notification::make()
+                        ->title("Draft invoice {$invoice->invoice_number} created")
+                        ->success()
+                        ->send();
+                }),
+            Tables\Actions\Action::make('openInvoice')
+                ->label('Open Invoice')
+                ->icon('heroicon-o-arrow-top-right-on-square')
+                ->color('success')
+                ->visible(fn (Quotation $record) => static::invoiceResource() !== null
+                    && $record->invoice()->exists())
+                ->url(function (Quotation $record) {
+                    $resource = static::invoiceResource();
+
+                    return $resource::getUrl('view', ['record' => $record->invoice()->value('id')]);
+                }),
+            Tables\Actions\Action::make('invoiceCreated')
+                ->label(fn (Quotation $record) => "Invoice {$record->invoice?->invoice_number} created")
+                ->icon('heroicon-o-check-circle')
+                ->color('gray')
+                ->disabled()
+                ->visible(fn (Quotation $record) => static::invoiceResource() === null
+                    && $record->invoice()->exists()),
         ];
     }
 
@@ -80,5 +127,14 @@ trait HasQuotationConversionActions
         return ! $workOrder
             || $workOrder->client_id !== $record->client_id
             || (int) ($workOrder->details['source_quotation_id'] ?? 0) !== $record->id;
+    }
+
+    private static function invoiceResource(): ?string
+    {
+        return match (\Filament\Facades\Filament::getCurrentPanel()->getId()) {
+            'admin' => \App\Filament\Admin\Resources\InvoiceResource::class,
+            'accountant' => \App\Filament\Accountant\Resources\InvoiceResource::class,
+            default => null,
+        };
     }
 }

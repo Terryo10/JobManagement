@@ -87,9 +87,12 @@
             </div>
             <div class="header-right">
                 <div class="doc-type">Invoice</div>
-                <div class="detail-line"><span class="detail-label">DATE :</span> {{ $invoice->issued_at ? $invoice->issued_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
+                <div class="detail-line"><span class="detail-label">DATE :</span> {{ $invoice->issued_at?->format('d/m/Y') ?? '—' }}</div>
 
                 <div class="detail-line"><span class="detail-label">Invoice No:</span> {{ $invoice->invoice_number }}</div>
+                @if($invoice->quotation)
+                <div class="detail-line"><span class="detail-label">Quotation No:</span> {{ $invoice->quotation->quotation_number }}</div>
+                @endif
                 @if($invoice->workOrder)
                 <div class="detail-line"><span class="detail-label">Reference Number:</span> {{ $invoice->workOrder->reference_number }}</div>
                 @endif
