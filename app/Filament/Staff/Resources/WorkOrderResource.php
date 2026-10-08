@@ -58,11 +58,10 @@ class WorkOrderResource extends Resource
                                     ->required(),
                                 \Filament\Forms\Components\Select::make('category')
                                     ->options(['media' => 'Media', 'civil_works' => 'Civil Works', 'energy' => 'Energy', 'warehouse' => 'Warehouse'])
-                                    ->required(),
+                                    ->placeholder('Choose when known'),
                                 \Filament\Forms\Components\Select::make('priority')
                                     ->options(['low' => 'Low', 'normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'])
-                                    ->default('normal')
-                                    ->required(),
+                                    ->placeholder('Choose when known'),
                             ]),
 
                         \Filament\Forms\Components\Section::make('Organisation')
@@ -193,7 +192,7 @@ class WorkOrderResource extends Resource
                                     ->label('Budget Alert Threshold (%)')
                                     ->numeric()
                                     ->suffix('%')
-                                    ->default(80),
+                                    ->placeholder('Set when needed'),
                                 \Filament\Forms\Components\DatePicker::make('details.procurement_deadline')
                                     ->label('Procurement Deadline')
                                     ->native(false),

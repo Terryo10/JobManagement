@@ -46,6 +46,12 @@ class Quotation extends Model
         ];
     }
 
+    public function hasIncompleteTotals(): bool
+    {
+        return (float) $this->total === 0.0
+            && $this->items->contains(fn ($item) => (float) $item->total > 0);
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);

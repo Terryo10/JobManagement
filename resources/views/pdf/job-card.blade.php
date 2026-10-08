@@ -187,6 +187,33 @@
 
     {{-- ─── PROCUREMENT ─────────────────────────────────────────────────────── --}}
     @php $d = $workOrder->details ?? []; @endphp
+    @foreach($workOrder->quotations as $quotation)
+    <div class="section">
+        <div class="section-heading">Quotation {{ $quotation->quotation_number }}</div>
+        <div class="section-body">
+            <div class="data-row"><div class="data-label">Phone</div><div class="data-value">{{ $quotation->phone ?? '—' }}</div></div>
+            <div class="data-row"><div class="data-label">Currency</div><div class="data-value">{{ $quotation->currency }}</div></div>
+            @if($quotation->bankAccount)
+            <div class="data-row"><div class="data-label">Bank Account</div><div class="data-value">{{ $quotation->bankAccount->account_name }} — {{ $quotation->bankAccount->account_number }}</div></div>
+            @endif
+            @if($quotation->valid_until)
+            <div class="data-row"><div class="data-label">Valid Until</div><div class="data-value">{{ $quotation->valid_until->format('d M Y') }}</div></div>
+            @endif
+            @foreach($quotation->items as $item)
+            <div class="data-row">
+                <div class="data-label">Line Item</div>
+                <div class="data-value">{{ $item->description }} — {{ $item->quantity }} {{ $item->unit ?? '' }} × {{ $quotation->currency }} {{ number_format((float) $item->unit_price, 2) }} = {{ $quotation->currency }} {{ number_format((float) $item->total, 2) }}</div>
+            </div>
+            @endforeach
+            @unless($quotation->hasIncompleteTotals())
+            <div class="data-row"><div class="data-label">Subtotal / Tax / Total</div><div class="data-value">{{ $quotation->currency }} {{ number_format((float) $quotation->subtotal, 2) }} / {{ $quotation->tax_rate }}% ({{ $quotation->currency }} {{ number_format((float) $quotation->tax_amount, 2) }}) / {{ $quotation->currency }} {{ number_format((float) $quotation->total, 2) }}</div></div>
+            @endunless
+            @if($quotation->notes)
+            <div class="data-row"><div class="data-label">Notes</div><div class="data-value">{{ $quotation->notes }}</div></div>
+            @endif
+        </div>
+    </div>
+    @endforeach
     @if(!empty($d['logistics']) || !empty($d['procurement_details']) || !empty($d['supplier_name']) || !empty($workOrder->budget))
     <div class="section">
         <div class="section-heading">Procurement</div>

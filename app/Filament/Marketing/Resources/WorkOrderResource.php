@@ -22,11 +22,11 @@ class WorkOrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $navigationLabel = 'Job Cards';
+    protected static ?string $navigationLabel = 'Work Orders';
 
-    protected static ?string $modelLabel = 'Job Card';
+    protected static ?string $modelLabel = 'Work Order';
 
-    protected static ?string $pluralModelLabel = 'Job Cards';
+    protected static ?string $pluralModelLabel = 'Work Orders';
 
     protected static ?string $navigationGroup = 'Operations';
 
@@ -61,11 +61,10 @@ class WorkOrderResource extends Resource
                                     ->required(),
                                 Forms\Components\Select::make('category')
                                     ->options(['media' => 'Media', 'civil_works' => 'Civil Works', 'energy' => 'Energy', 'warehouse' => 'Warehouse'])
-                                    ->required(),
+                                    ->placeholder('Choose when known'),
                                 Forms\Components\Select::make('priority')
                                     ->options(['low' => 'Low', 'normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'])
-                                    ->default('normal')
-                                    ->required(),
+                                    ->placeholder('Choose when known'),
                             ]),
 
                         Forms\Components\Section::make('Organisation')
@@ -195,7 +194,7 @@ class WorkOrderResource extends Resource
                                     ->label('Budget Alert Threshold (%)')
                                     ->numeric()
                                     ->suffix('%')
-                                    ->default(80),
+                                    ->placeholder('Set when needed'),
                                 Forms\Components\DatePicker::make('details.procurement_deadline')
                                     ->label('Procurement Deadline')
                                     ->native(false),
@@ -404,6 +403,37 @@ class WorkOrderResource extends Resource
                     }),
                 ]),
 
+            Infolists\Components\Section::make('Linked Quotations')
+                ->visible(fn ($record) => $record->quotations()->exists())
+                ->schema([
+                    Infolists\Components\RepeatableEntry::make('quotations')->schema([
+                        Infolists\Components\TextEntry::make('quotation_number')->label('Quotation #')
+                            ->url(fn ($record) => QuotationResource::getUrl('view', ['record' => $record->id])),
+                        Infolists\Components\TextEntry::make('phone')->label('Phone')->placeholder('—'),
+                        Infolists\Components\TextEntry::make('valid_until')->label('Valid Until')->date()->placeholder('—'),
+                        Infolists\Components\TextEntry::make('currency'),
+                        Infolists\Components\TextEntry::make('bankAccount.account_name')->label('Bank Account')->placeholder('—'),
+                        Infolists\Components\TextEntry::make('attachments_count')->label('Attachments')
+                            ->state(fn ($record) => $record->documents()->count()),
+                        Infolists\Components\TextEntry::make('notes')->columnSpanFull()->placeholder('—'),
+                        Infolists\Components\RepeatableEntry::make('items')->label('Line Items')->schema([
+                            Infolists\Components\TextEntry::make('description')->columnSpan(2),
+                            Infolists\Components\TextEntry::make('quantity'),
+                            Infolists\Components\TextEntry::make('unit')->placeholder('—'),
+                            Infolists\Components\TextEntry::make('unit_price')->numeric(decimalPlaces: 2),
+                            Infolists\Components\TextEntry::make('total')->numeric(decimalPlaces: 2),
+                        ])->columns(6)->columnSpanFull(),
+                        Infolists\Components\TextEntry::make('subtotal')
+                            ->visible(fn ($record) => ! $record->hasIncompleteTotals()),
+                        Infolists\Components\TextEntry::make('tax_rate')->suffix('%')
+                            ->visible(fn ($record) => ! $record->hasIncompleteTotals()),
+                        Infolists\Components\TextEntry::make('tax_amount')
+                            ->visible(fn ($record) => ! $record->hasIncompleteTotals()),
+                        Infolists\Components\TextEntry::make('total')
+                            ->visible(fn ($record) => ! $record->hasIncompleteTotals()),
+                    ])->columns(4),
+                ]),
+
             Infolists\Components\Section::make('Design Job Card')
                 ->columns(3)
                 ->collapsed()
@@ -412,6 +442,35 @@ class WorkOrderResource extends Resource
                     Infolists\Components\TextEntry::make('details.date_order_received')->label('Date Order Received')->date()->placeholder('—'),
                     Infolists\Components\TextEntry::make('deadline')->label('Deadline')->date()->placeholder('—'),
                 ]),
+
+            Infolists\Components\Section::make('Source Quotation')
+                ->visible(fn ($record) => filled($record->details['source_quotation_id'] ?? null))
+                ->collapsed()
+                ->schema([
+                    Infolists\Components\TextEntry::make('details.source_quotation_number')->label('Quotation #')
+                        ->url(fn ($record) => self::getSourceQuotationUrl($record)),
+                    Infolists\Components\TextEntry::make('details.source_currency')->label('Currency'),
+                    Infolists\Components\TextEntry::make('details.source_phone')->label('Phone')->placeholder('—'),
+                    Infolists\Components\TextEntry::make('details.source_valid_until')->label('Valid Until')->date()->placeholder('—'),
+                    Infolists\Components\TextEntry::make('details.source_bank_account_id')->label('Bank Account')
+                        ->formatStateUsing(fn ($state) => \App\Models\BankAccount::find($state)?->account_name ?? '—'),
+                    Infolists\Components\TextEntry::make('details.source_notes')->label('Notes')->columnSpanFull()->placeholder('—'),
+                    Infolists\Components\RepeatableEntry::make('details.source_items')->label('Line Items')->schema([
+                        Infolists\Components\TextEntry::make('description')->columnSpan(2),
+                        Infolists\Components\TextEntry::make('quantity'),
+                        Infolists\Components\TextEntry::make('unit')->placeholder('—'),
+                        Infolists\Components\TextEntry::make('unit_price')->numeric(decimalPlaces: 2),
+                        Infolists\Components\TextEntry::make('total')->numeric(decimalPlaces: 2),
+                    ])->columns(6)->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('details.source_subtotal')->label('Subtotal')
+                        ->visible(fn ($record) => isset($record->details['source_total'])),
+                    Infolists\Components\TextEntry::make('details.source_tax_rate')->label('Tax Rate')->suffix('%')
+                        ->visible(fn ($record) => isset($record->details['source_total'])),
+                    Infolists\Components\TextEntry::make('details.source_tax_amount')->label('Tax Amount')
+                        ->visible(fn ($record) => isset($record->details['source_total'])),
+                    Infolists\Components\TextEntry::make('details.source_total')->label('Total')
+                        ->visible(fn ($record) => isset($record->details['source_total'])),
+                ])->columns(4),
 
             Infolists\Components\Section::make('Financial Overview')
                 ->columns(3)
@@ -422,6 +481,15 @@ class WorkOrderResource extends Resource
                     Infolists\Components\TextEntry::make('start_date')->label('Start Date')->date(),
                 ]),
         ]);
+    }
+
+    private static function getSourceQuotationUrl(WorkOrder $record): ?string
+    {
+        $quotationId = $record->details['source_quotation_id'] ?? null;
+
+        return $quotationId
+            ? QuotationResource::getUrl('view', ['record' => $quotationId])
+            : null;
     }
 
     public static function getPages(): array
